@@ -14,8 +14,8 @@ git status
 git commit . -m "write message here"
 # push intermediate changes
 git push
-# push final changes of current branch 
-# this will delete the branch locally, handle merges through gui
-git push -d
 ## do the merging using the gui or terminal and then resync (careful!)
 git pull 
+## and close the local branch
+git checkout development
+git branch -d "New-Branch"
