@@ -1,12 +1,21 @@
+### GENERAL WORKFLOW USING GIT
+# starting a branch
+git checkout development
+git pull
+git branch "New-Branch"
 ## set active branch
-git checkout bart-dev
+git checkout "New-Branch"
 git status
 ## add new branch online
-# git push --set-upstream origin bart-dev
+git push --set-upstream origin "New-Branch"
 ## commit changes to current branch
 git add .
 git status
 git commit . -m "write message here"
+# push intermediate changes
 git push
+# push final changes of current branch 
+# this will delete the branch locally, handle merges through gui
+git push -d
 ## do the merging using the gui or terminal and then resync (careful!)
 git pull 
