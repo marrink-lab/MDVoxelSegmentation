@@ -1,0 +1,12 @@
+## set active branch
+git checkout bart-dev
+git status
+## add new branch online
+# git push --set-upstream origin bart-dev
+## commit changes to current branch
+git add .
+git status
+git commit . -m "write message here"
+git push
+## do the merging using the gui or terminal and then resync (careful!)
+git pull 
