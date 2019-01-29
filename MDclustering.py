@@ -2,7 +2,7 @@
 # coding: utf-8
 
 #from pbcpy.base import pbcarray # needed for pbc clustering
-import MDAnalysis as mda
+#import MDAnalysis as mda
 import numpy as np
 import copy
 #import nglview as nv
