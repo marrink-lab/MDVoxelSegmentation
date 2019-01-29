@@ -13,6 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import itertools
 import collections
 import sys
+import os
 
 def read_config(config_file='test_files/MDclustering.inp', verbose = False):
     """
@@ -41,8 +42,8 @@ def generate_explicit_matrix(array, resolution, density, specified_dim = False,
     specify a minimum voxel density to be added to the output matrix. The inv_density can
     be set to true to specify a maximum density. The no_zero flag will even under the inv_density
     setting not return the elements containing 0 elements."""
-    # we want to refer to the unmodified array for the dictionary entries later on
-    array_original = copy.copy(array)
+    # protecting the original matrix
+    array = copy.copy(array)
     # find the extremes to determine the final size of the explicit binned matrix
     x_max, y_max, z_max = np.max(array[:,0]), np.max(array[:,1]), np.max(array[:,2])
     if not specified_dim:
@@ -55,8 +56,6 @@ def generate_explicit_matrix(array, resolution, density, specified_dim = False,
     # making the explicit matrix
     explicit_matrix = np.zeros(limits_ints)
     # converting the data points
-    array_original = array
-    array = copy.copy(array_original)
     array = array/resolution # convert data to bins
     # creating a dicitonary with the atoms inside and the xyz coodirdiantes as keys
     voxel2atoms = collections.defaultdict(list)
