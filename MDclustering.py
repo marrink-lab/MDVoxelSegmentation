@@ -6,7 +6,7 @@ import MDAnalysis as mda
 import numpy as np
 import copy
 #import nglview as nv
-from mpl_toolkits.mplot3d import Axes3D
+#from mpl_toolkits.mplot3d import Axes3D
 #import matplotlib.pyplot as plt
 # allows for realtime plot rendering in notebook
 #%matplotlib notebook
