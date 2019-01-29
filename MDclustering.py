@@ -7,12 +7,11 @@ import numpy as np
 import copy
 #import nglview as nv
 from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 # allows for realtime plot rendering in notebook
 #%matplotlib notebook
 import itertools
 import collections
-import datetime
 import sys
 
 def read_config(config_file='test_files/MDclustering.inp', verbose = False):
@@ -243,7 +242,6 @@ def clustering(array, distance = 1, pbc = True):
     # the beginning of the outer cluster loop
     counter = 0
     #time = 0 
-    max_time = len(mask_indices)
     for idx in mask_indices:
         # genreates a dequeue, which is like a list but cheaper tot pop at front 
         to_do_list = collections.deque()
@@ -260,62 +258,64 @@ def clustering(array, distance = 1, pbc = True):
     clusters = set(mask_cluster_state_mask[1].flatten()) # a set is always returned low to high?
     cluster_dict ={}
     for x in range(len(clusters)):
-        cluster_dict[x] = np.array(np.where(mask_cluster_state_mask[1,:,:,:] ==x)).T
-    finish = datetime.datetime.now()
+        cluster_dict[x] = np.array(np.where(mask_cluster_state_mask[1,:,:,:] ==x)).T #Create a Dictionary to store voxels by cluster
     return mask_cluster_state_mask, cluster_dict
 
-def plot_voxels(array):
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.gca(projection='3d')
-    max_size = np.array(array.shape).max()
-    ax.set_xlim(0,max_size)
-    ax.set_ylim(0,max_size)
-    ax.set_zlim(0,max_size)    
-    color = (0.5,0.5,0.5,0.3)
-    edge_color = (1,1,1,0.3)
-    ax.voxels(array, edgecolor=edge_color, facecolor= color)
-    plt.show()
 
-def plot_clusters(array, clusters, min_cluster_size = 5):
-    """Creates a voxel plot for the clusters in the array never plots cluster 0 and only
-    shows clusters of size equal or larger than the minimum."""
-    edge_color = np.array((1,1,1,0.3), dtype=float)
-    color = np.array((1,1,1,0.3), dtype=float)
-
-    fig = plt.figure(figsize=(10, 10))
-    ax = fig.gca(projection='3d')
-    max_size = np.array(array.shape).max()
-    ax.set_xlim(0,max_size)
-    ax.set_ylim(0,max_size)
-    ax.set_zlim(0,max_size)
-    counter = 0
-    colors = []
-    for cluster in clusters:
-        # automagically skips cluster 0 :D
-        plot_array = copy.copy(array[1])
-        plot_array[plot_array != cluster] = 0
-        plot_array[plot_array > 0] = cluster
-        color[:3] = np.random.rand(3)
-        if np.count_nonzero(plot_array.flatten()) >= min_cluster_size:
-            colors.append(copy.copy(color))
-            counter += 1
-            ax.voxels(plot_array, edgecolor=edge_color, facecolors = color)
-    print('{} cluster(s) have been found >= {} (min_cluster_size)'.format(counter, min_cluster_size))
-    plt.show()
-    counter = 0
-    for cluster in clusters:
-        plot_array = copy.copy(array[1])
-        plot_array[plot_array != cluster] = 0
-        plot_array[plot_array > 0] = cluster
-        if np.count_nonzero(plot_array.flatten()) >= min_cluster_size:
-            color = colors[counter]
-            counter += 1
-            print('Cluster {}'.format(counter))
-            fig = plt.figure(figsize=(10, 10))
-            ax = fig.gca(projection='3d')
-            max_size = np.array(array.shape).max()
-            ax.set_xlim(0,max_size)
-            ax.set_ylim(0,max_size)
-            ax.set_zlim(0,max_size)
-            ax.voxels(plot_array, edgecolor=edge_color, facecolors = color)
-            plt.show()
+#  =============================================================================
+#  def plot_voxels(array):
+#      fig = plt.figure(figsize=(10, 10))
+#      ax = fig.gca(projection='3d')
+#      max_size = np.array(array.shape).max()
+#      ax.set_xlim(0,max_size)
+#      ax.set_ylim(0,max_size)
+#      ax.set_zlim(0,max_size)    
+#      color = (0.5,0.5,0.5,0.3)
+#      edge_color = (1,1,1,0.3)
+#      ax.voxels(array, edgecolor=edge_color, facecolor= color)
+#      plt.show()
+#  
+#  def plot_clusters(array, clusters, min_cluster_size = 5):
+#      """Creates a voxel plot for the clusters in the array never plots cluster 0 and only
+#      shows clusters of size equal or larger than the minimum."""
+#      edge_color = np.array((1,1,1,0.3), dtype=float)
+#      color = np.array((1,1,1,0.3), dtype=float)
+#  
+#      fig = plt.figure(figsize=(10, 10))
+#      ax = fig.gca(projection='3d')
+#      max_size = np.array(array.shape).max()
+#      ax.set_xlim(0,max_size)
+#      ax.set_ylim(0,max_size)
+#      ax.set_zlim(0,max_size)
+#      counter = 0
+#      colors = []
+#      for cluster in clusters:
+#          # automagically skips cluster 0 :D
+#          plot_array = copy.copy(array[1])
+#          plot_array[plot_array != cluster] = 0
+#          plot_array[plot_array > 0] = cluster
+#          color[:3] = np.random.rand(3)
+#          if np.count_nonzero(plot_array.flatten()) >= min_cluster_size:
+#              colors.append(copy.copy(color))
+#              counter += 1
+#              ax.voxels(plot_array, edgecolor=edge_color, facecolors = color)
+#      print('{} cluster(s) have been found >= {} (min_cluster_size)'.format(counter, min_cluster_size))
+#      plt.show()
+#      counter = 0
+#      for cluster in clusters:
+#          plot_array = copy.copy(array[1])
+#          plot_array[plot_array != cluster] = 0
+#          plot_array[plot_array > 0] = cluster
+#          if np.count_nonzero(plot_array.flatten()) >= min_cluster_size:
+#              color = colors[counter]
+#              counter += 1
+#              print('Cluster {}'.format(counter))
+#              fig = plt.figure(figsize=(10, 10))
+#              ax = fig.gca(projection='3d')
+#              max_size = np.array(array.shape).max()
+#              ax.set_xlim(0,max_size)
+#              ax.set_ylim(0,max_size)
+#              ax.set_zlim(0,max_size)
+#              ax.voxels(plot_array, edgecolor=edge_color, facecolors = color)
+#              plt.show()
+#  =============================================================================
