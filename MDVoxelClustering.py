@@ -15,7 +15,7 @@ import collections
 import sys
 import os
 
-def read_config(config_file='test_files/MDclustering.inp', verbose = False):
+def read_config(config_file='MDclustering.inp', verbose = False):
     """
     A simple way to set default clustering settings.
     """
@@ -34,14 +34,17 @@ def read_config(config_file='test_files/MDclustering.inp', verbose = False):
         sys.exit()
 
 #### This is where it all happens
+#@profile
 def generate_explicit_matrix(array, resolution, density, specified_dim = False, 
                              inv_density = False, no_zero = True, verbose = False):
-    """Takes a compressed 3d matrix and returns it as an explicit 3d matrix.
-    The resolution is the relative bin size. A tuple of 3 can be used to speify the
-    binning dimensions  in nm. It assumes your box has cubic PBC! Density can be used to 
-    specify a minimum voxel density to be added to the output matrix. The inv_density can
-    be set to true to specify a maximum density. The no_zero flag will even under the inv_density
-    setting not return the elements containing 0 elements."""
+    """
+    Takes a compressed 3d matrix and returns it as an explicit 3d matrix.
+    The resolution is the relative bin size. A tuple of 3 can be used to 
+    specify the binning dimensions  in nm. It assumes your box has cubic PBC! 
+    Density can be used to specify a minimum voxel density to be added to the 
+    output matrix. The inv_density can be set to true to specify a maximum 
+    density. The no_zero flag will even under the inv_density setting not 
+    return the elements containing 0 elements."""
     # protecting the original matrix
     array = copy.copy(array)
     # find the extremes to determine the final size of the explicit binned matrix
@@ -59,13 +62,12 @@ def generate_explicit_matrix(array, resolution, density, specified_dim = False,
     array = array/resolution # convert data to bins
     # creating a dicitonary with the atoms inside and the xyz coodirdiantes as keys
     voxel2atoms = collections.defaultdict(list)
-    # adding each poin to the explicit matrix also cubic PBC!!!
+    # clipping the original matrix to the voxels
+    # warning this implements cubic PBC!!! A similar trick can be done for others
+    array = (array % (limits.T-1)).astype(int)
+    # adding each poin to the explicit matrix
     for idx, point in enumerate(array):
-        # warning this implements cubic PBC!!! A similar trick can be done for others
-        x = round(point[0] % (limits_ints[0]-1)).astype(int)
-        y = round(point[1] % (limits_ints[1]-1)).astype(int)
-        z = round(point[2] % (limits_ints[2]-1)).astype(int)
-        #print(x, type(x), y, type(y), z ,type(z))
+        x, y, z = point
         explicit_matrix[x, y, z] += 1
         # mapping atoms to voxels
         key = 'x{}y{}z{}'.format(x, y, z)
