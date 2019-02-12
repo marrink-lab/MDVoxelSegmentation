@@ -9,6 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import os
 import pickle
 import time
+import sys
 
 ### Only for testing
 def plot_voxels(array):
@@ -102,16 +103,22 @@ def leaflet_clustering(
     # playing around with leaflet selector and it seems to work
     # clustering the lipid contours
     current_selection = lipids_selection
-    current_clusters, current_mapping = contour_clustering(current_selection, resolution)
-    lipids_universe_masks = universe_clusters(current_clusters, current_mapping, current_selection)
+    current_clusters, current_mapping = contour_clustering(current_selection, 
+                                                           resolution)
+    lipids_universe_masks = universe_clusters(current_clusters, 
+                                              current_mapping, 
+                                              current_selection)
     lipid_contour_resid_groups = [
             set(lipids_universe_mask.resids)
             for lipids_universe_mask in lipids_universe_masks
             ]
     # clustering the tail density for tail grouping
     current_selection = tails_selection
-    current_clusters, current_mapping = volume_clustering(current_selection, resolution)
-    tails_universe_masks = universe_clusters(current_clusters, current_mapping, current_selection)
+    current_clusters, current_mapping = volume_clustering(current_selection, 
+                                                          resolution)
+    tails_universe_masks = universe_clusters(current_clusters, 
+                                             current_mapping, 
+                                             current_selection)
     tail_density_resid_groups = [
             set(tails_universe_mask.resids)
             for tails_universe_mask in tails_universe_masks
@@ -121,7 +128,10 @@ def leaflet_clustering(
     leaflet_selections = []
     for lipid_contour_resid_group in lipid_contour_resid_groups:
         for tail_density_resid_group in tail_density_resid_groups:
-            current_resids = np.array(list(lipid_contour_resid_group.intersection(tail_density_resid_group)), dtype=int)
+            current_resids = np.array(list(
+                    lipid_contour_resid_group.intersection(
+                            tail_density_resid_group)), dtype=int
+            )
             if len(current_resids) >= 1:
                 leaflet_universe = universe.atoms.residues[current_resids]        
                 leaflet_selections.append(leaflet_universe)
@@ -131,11 +141,11 @@ def leaflet_clustering(
 
 
 def mf_leaflet_clustering(universe, lipid_resnames, 
-                               tail_names, resolution = 1, 
-                               density = 0.01, inv_density = False, 
-                               min_cluster_size = 5, plotting = False,
-                               skip = 1, reduce_points = 10, 
-                               return_selections = True):
+                          tail_names, resolution = 1, 
+                          density = 0.01, inv_density = False, 
+                          min_cluster_size = 5, plotting = False,
+                          skip = 1, reduce_points = 10, 
+                          return_selections = True):
     """
     MultiFrame Leaflet Clustering
     
@@ -198,19 +208,25 @@ def mf_leaflet_clustering(universe, lipid_resnames,
         return
 
 # generating test data MDA
-test = mda.Universe(
-        '/home/bart/projects/clustering/MDVoxelClustering/test_files/4_adhesion/md.tpr', 
-        '/home/bart/projects/clustering/MDVoxelClustering/test_files/4_adhesion/full_length.xtc',
-        )
+if __name__ == '__main__':
+    # some local test data
+    try:
+        data = mda.Universe(sys.argv[1], sys.argv[2])
+        plotting = sys.argv[3]
+    except IndexError:
+        print('Please specify a tpr and an xtc and a 0/1 for plotting.')
+        sys.exit()
 
-# some basic parsing
-lipids = ['DLPC', 'DLPS', 'DOPE', 'DOTAP', 'DYPC', 'DYPS', 'LYPC', 'LYPS']
-headgroups = ['CNO', 'NC3', 'NH3', 'PO4', 'TAP', 'GL1', 'GL2']
-tails = ['C3A', 'C3B', 'C4A', 'C4B']
+    plotting = bool(int(plotting))
+    # some basic lipid stuff, this will be moved to an input file
+    lipids = ['DLPC', 'DLPS', 'DOPE', 'DOTAP', 'DYPC', 'DYPS', 'LYPC', 'LYPS']
+    headgroups = ['CNO', 'NC3', 'NH3', 'PO4', 'TAP', 'GL1', 'GL2']
+    tails = ['C3A', 'C3B', 'C4A', 'C4B']
 
-clusters = mf_leaflet_clustering(test, lipids, tails, plotting = True, 
-                                 skip = 5, reduce_points = 20, 
-                                 return_selections = True)
+    clusters = mf_leaflet_clustering(data, lipids, tails, 
+                                     plotting = plotting, 
+                                     skip = 5, reduce_points = 20, 
+                                     return_selections = True)
 
 #not working, but very useful to make it work
 #with open('cluster_list.pkl', 'wb') as f:
