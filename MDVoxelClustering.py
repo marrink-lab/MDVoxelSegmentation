@@ -35,7 +35,7 @@ def read_config(config_file='MDclustering.inp', verbose = False):
 
 #### This is where it all happens
 #@profile
-def generate_explicit_matrix(array, resolution, density, specified_dim = False, 
+def generate_explicit_matrix(universe, resolution, density, specified_dim = False, 
                              inv_density = False, no_zero = True, verbose = False):
     """
     Takes a compressed 3d matrix and returns it as an explicit 3d matrix.
@@ -44,19 +44,22 @@ def generate_explicit_matrix(array, resolution, density, specified_dim = False,
     Density can be used to specify a minimum voxel density to be added to the 
     output matrix. The inv_density can be set to true to specify a maximum 
     density. The no_zero flag will even under the inv_density setting not 
-    return the elements containing 0 elements."""
+    return the elements containing 0 elements.
+    """
     # protecting the original matrix
-    array = copy.copy(array)
+    # /10 for angstrom to nm conversion
+    array = copy.copy(universe.positions/10)
     # find the extremes to determine the final size of the explicit binned matrix
-    x_max, y_max, z_max = np.max(array[:,0]), np.max(array[:,1]), np.max(array[:,2])
+    #x_max, y_max, z_max = np.max(array[:,0]), np.max(array[:,1]), np.max(array[:,2])
     if not specified_dim:
-        limits = np.array([x_max, y_max, z_max])
+        limits = np.array([universe.dimensions[:3]/10])
     else:
         limits = np.array(specified_dim)
     # adapting the binning to the resolution
     limits = limits/resolution
     limits_ints = np.array(np.round(limits), dtype=int)
-    # making the explicit matrix
+    limits_ints = limits_ints.flatten()
+    # making the explicit matrix remove one for pbc
     explicit_matrix = np.zeros(limits_ints)
     # converting the data points
     array = array/resolution # convert data to bins
@@ -64,11 +67,15 @@ def generate_explicit_matrix(array, resolution, density, specified_dim = False,
     voxel2atoms = collections.defaultdict(list)
     # clipping the original matrix to the voxels
     # warning this implements cubic PBC!!! A similar trick can be done for others
-    array = (array % (limits.T-1)).astype(int)
+    array = (array % (limits_ints.T)).astype(int)
     # adding each poin to the explicit matrix
     for idx, point in enumerate(array):
         x, y, z = point
-        explicit_matrix[x, y, z] += 1
+        try:
+            explicit_matrix[x, y, z] += 1
+        except IndexError:
+            print(limits_ints, point)
+            return
         # mapping atoms to voxels
         key = 'x{}y{}z{}'.format(x, y, z)
         voxel2atoms[key].append(idx)
@@ -99,7 +106,7 @@ def smear_3d_matrix(array, pbc = True):
     #array_empty[1:-1,1:-1,1:-1] = array
     occupancy_mask = copy.copy(array)
     # inverting the matrix to get the inner boundaries
-    occupancy_mask = np.array(np.logical_not(occupancy_mask),dtype=float)
+    occupancy_mask = np.array(np.logical_not(occupancy_mask),dtype=int)
     # smearing the matrix
     blurred_matrix = copy.copy(occupancy_mask)
     blurred_matrix[shift:] += occupancy_mask[:-shift]
@@ -117,8 +124,7 @@ def smear_3d_matrix(array, pbc = True):
         blurred_matrix[:,:,0] += occupancy_mask[:,:,-1]
         blurred_matrix[:,:,-1] += occupancy_mask[:,:,0]
     # clipping the matrix, tried density stuff here, but can't work.
-    blurred_matrix[blurred_matrix >= 1] = 1
-    blurred_matrix[blurred_matrix < 0] = 0 # the amount of neighbours is 27 at most    
+    blurred_matrix[blurred_matrix >= 1] = 1   
     # obtaining the contours
     contour_mask = blurred_matrix - occupancy_mask
     return contour_mask
@@ -254,7 +260,6 @@ def clustering(array, distance = 1, pbc = True):
         while len(to_do_list) > 0: # exhaust all queue members for cluster
             idx = np.array(to_do_list.popleft())
             clustering_inner_loop(idx, mask_cluster_state_mask, counter, to_do_list, distance, pbc)
-    
         
     clusters = set(mask_cluster_state_mask[1].flatten()) # a set is always returned low to high?
     cluster_dict ={}
