@@ -93,20 +93,20 @@ def generate_explicit_matrix(universe, resolution, density, specified_dim = Fals
         explicit_matrix[explicit_matrix >= density*mean] = 1
     return explicit_matrix, voxel2atoms
 
-def smear_3d_matrix(array, pbc = True):
+def smear_3d_matrix(array, pbc = True, inv=True):
     """Takes an explicit array and smears it over the axes. This is like
     a running average in 3D. It returns the smeared array as a new array.
     By default the pbc is taken to be cubic, this can be turned off.
-    
-    !!! the smearing does not take pbc into account yet !!!"""
+    """
     shift = 1
     # making the matrix one bigger to prevent problems later on
     #dimensions = np.array(array.shape)+np.array((2, 2, 2))
     #array_empty = np.zeros(dimensions)
     #array_empty[1:-1,1:-1,1:-1] = array
     occupancy_mask = copy.copy(array)
-    # inverting the matrix to get the inner boundaries
-    occupancy_mask = np.array(np.logical_not(occupancy_mask),dtype=int)
+    if inv:
+        # inverting the matrix to get the inner boundaries
+        occupancy_mask = np.array(np.logical_not(occupancy_mask),dtype=int)
     # smearing the matrix
     blurred_matrix = copy.copy(occupancy_mask)
     blurred_matrix[shift:] += occupancy_mask[:-shift]
