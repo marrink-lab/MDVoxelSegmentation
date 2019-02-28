@@ -9,5 +9,5 @@ To do analysis of a MD trajectory on a more abstract level. Instead of having to
 Contours are meant for analysis on the behaviour of clusters in a cheaper dimensionality. They could be enough to uniquely identify a cluster e.g. the number of particles present and the voxel space contour size (not exactly the real size, but often close enough).
 
 #### VOLUMES
-Volumes give you a more robust manner of selection which will for sure include all the particles you need for high resolution analysis. Combining layers of volumes and contours often can dramatically reduce the degrees of freedom in your data set, without loosing any particles on the way. Hopefully we will demonstrate this for the automatic leaflet detection in a crowded membrane space (all forms of lipid cluster states, such as: adhesed, semi-fused, fused and seperated).
+Volumes give you a more robust manner of selection which will for sure include all the particles you need for high resolution analysis. Combining layers of volumes and contours often can dramatically reduce the degrees of freedom in your data set, without loosing any particles on the way. Hopefully we will demonstrate this for the automatic leaflet detection in a crowded membrane space (all forms of lipid cluster states, such as: adhesed, semi-fused, fused and seperated). Including densely populated membranes with proteins. 
 
