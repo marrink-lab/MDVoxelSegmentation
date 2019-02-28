@@ -2,7 +2,7 @@
 #### An attempt of making data analysis easier and quicker for many MD people
 
 ## MAIN GOAL
-To do analysis of MD trajectory on a more abstract level. Instead of having to talk about specific atoms and their corresponding position and residue members. We often would like to talk about properties on a much more abstract level, such as the diffusion of a certain aggregate of particles, or talk about the leaflets of lipid assemblies. Current methods for leaflet identification often imply geometrical arguments  on every residue, which can quickly become very expensive. Here we present a mixture of voxel and graph based selection methods to obtain information about dynamic clusters at a (hopefully) realtime speed.
+To do analysis of a MD trajectory on a more abstract level. Instead of having to talk about specific atoms and their corresponding position and residue members. We often would like to talk about properties on a much more abstract level, such as the diffusion of a certain aggregate of particles, or talk about the leaflets of lipid assemblies. Current methods for leaflet identification often imply geometrical arguments  on every residue, which can quickly become very expensive. Here we present a mixture of voxel and graph based selection methods to obtain information about dynamic clusters at a (hopefully) realtime speed.
 
 ### Clustering
 #### CONTOURS
