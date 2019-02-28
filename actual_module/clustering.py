@@ -93,6 +93,7 @@ def generate_explicit_matrix(universe, resolution, density, specified_dim = Fals
         explicit_matrix[explicit_matrix >= density*mean] = 1
     return explicit_matrix, voxel2atoms
 
+#@profile
 def smear_3d_matrix(array, pbc = True, inv=True):
     """Takes an explicit array and smears it over the axes. This is like
     a running average in 3D. It returns the smeared array as a new array.
@@ -129,6 +130,7 @@ def smear_3d_matrix(array, pbc = True, inv=True):
     contour_mask = blurred_matrix - occupancy_mask
     return contour_mask
 
+#@profile
 def clustering_preparing(array):
     mask_cluster_state_mask = np.array((array,
                                     np.zeros(array.shape),
@@ -139,6 +141,7 @@ def clustering_preparing(array):
     
     return mask_cluster_state_mask, mask_indices
 
+#@profile
 def cubic_selection(dimensions, position, distance = 1):
     """Creates a selection mask which can handle cubic pbc."""
     position = np.array(position)
@@ -174,6 +177,7 @@ def cubic_selection(dimensions, position, distance = 1):
         selection_mask[element] = 1
     return np.array(np.where(selection_mask == 1)).T
 
+#@profile
 def clustering_inner_loop(idx, mask_cluster_state_mask, counter, to_do_list, distance, pbc = True):
     """A pretty smart clustering procedure."""
     # this automagically never flies out of bounds :D
@@ -237,6 +241,7 @@ def clustering_inner_loop(idx, mask_cluster_state_mask, counter, to_do_list, dis
         print(idx, ' could not be processed with the current pbc settings.')
 
 # getting the inner logic solid for clustering
+#@profile
 def clustering(array, distance = 1, pbc = True):
     """Takes an index (xyz tuple) and uses the neighbour_mask (array) to search for neighbours in the
     edge_cluster_mask. It also sets the the touched flag in place in the edge_cluster_state_mask. For all found
