@@ -242,15 +242,19 @@ def clustering_inner_loop(idx, mask_cluster_state_mask, counter, to_do_list, dis
 
 # getting the inner logic solid for clustering
 #@profile
-def clustering(array, distance = 1, pbc = True):
+def clustering(array, exclusion_mask = None, distance = 1, pbc = True):
     """Takes an index (xyz tuple) and uses the neighbour_mask (array) to search for neighbours in the
     edge_cluster_mask. It also sets the the touched flag in place in the edge_cluster_state_mask. For all found
-    and processed neighbours
+    and processed neighbours. The exlcusion_mask can be used to preset certain 
+    voxels to touched, therefore they act as local clustering stops.
     
     ### The matrix need to have no edges in its outer boundary therefore we cheat and add on to all x y z
     ### we need to do this before
     """
     mask_cluster_state_mask, mask_indices = clustering_preparing(array)
+    # handling possible exclusions
+    if exclusion_mask is not None:
+        mask_cluster_state_mask[2][exclusion_mask > 0 ] = 1
     # the beginning of the outer cluster loop
     counter = 0
     #time = 0 
