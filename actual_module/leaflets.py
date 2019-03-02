@@ -27,7 +27,7 @@ def plot_voxels(array):
 
 #@profile
 def contour_clustering(
-        universe, resolution = 1, density = 0.01, 
+        universe, exclusion_mask = None, resolution = 1, density = 0.01, 
         inv_density = False, min_cluster_size = 5
         ):
     """
@@ -46,12 +46,13 @@ def contour_clustering(
     # calculating the contour mask
     contour_mask = clus.smear_3d_matrix(explicit_matrix)
     # clustering the contours
-    contour_cluster_state_mask, contour_clusters = clus.clustering(contour_mask)
+    contour_cluster_state_mask, contour_clusters = clus.clustering(
+            contour_mask, exclusion_mask)
     return contour_clusters, voxel2atoms
 
 #@profile
 def volume_clustering(
-        universe, resolution = 1, density = 0.01, 
+        universe, exclusion_mask = None, resolution = 1, density = 0.01, 
         inv_density = False, min_cluster_size = 5
         ):
     """
@@ -61,7 +62,8 @@ def volume_clustering(
         universe, resolution = resolution, density = density, 
         inv_density = inv_density, verbose = False
         )
-    volume_cluster_state_mask, volume_clusters = clus.clustering(explicit_matrix)
+    volume_cluster_state_mask, volume_clusters = clus.clustering(
+            explicit_matrix, exclusion_mask)
     return volume_clusters, voxel2atoms
     
 def universe_clusters(clusters, mapping, selection):
@@ -76,154 +78,6 @@ def universe_clusters(clusters, mapping, selection):
         universe_masks.append(selection[indexes])
     return universe_masks
 
-#def leaflet_clustering(
-#        universe, lipid_resnames, tail_names, 
-#        resolution = 1, density = 0.01, inv_density = False, 
-#        min_cluster_size = 5
-#        ):
-#    """
-#    Clusters each lipid leaflet in the universe based on the the 
-#    tails and full lipids of the given lipids in the universe. Names and 
-#    resname should be a list of strings. The output is a list of of leaflet
-#    universes.
-#    """   
-#    lipids_query = ' or '.join(
-#            ['resname {}'.format(lipid) for lipid in lipid_resnames]
-#            )
-#    # not being used atm
-#    #headgroups_query = ' or '.join(
-#    #        ['name {}'.format(headgroup) for headgroup in headgroup_names]
-#    #        )
-#    tails_query = ' or '.join(
-#            ['name {}'.format(tail) for tail in tail_names]
-#            )
-#    lipids_selection = universe.select_atoms(lipids_query)
-#    # not being used atm
-#    #headgroups_selection = lipids_selection.select_atoms(headgroups_query)
-#    
-#    tails_selection = lipids_selection.select_atoms(tails_query)
-#
-#    # playing around with leaflet selector and it seems to work
-#    # clustering the lipid contours
-#    current_selection = lipids_selection
-#    current_clusters, current_mapping = contour_clustering(current_selection, 
-#                                                           resolution)
-#    lipids_universe_masks = universe_clusters(current_clusters, 
-#                                              current_mapping, 
-#                                              current_selection)
-#    lipid_contour_resid_groups = [
-#            #set(lipids_universe_mask.resids)
-#            lipids_universe_mask.residues
-#            for lipids_universe_mask in lipids_universe_masks
-#            ]
-#    # clustering the tail density for tail grouping
-#    current_selection = tails_selection
-#    current_clusters, current_mapping = volume_clustering(current_selection, 
-#                                                          resolution)
-#    tails_universe_masks = universe_clusters(current_clusters, 
-#                                             current_mapping, 
-#                                             current_selection)
-#    tail_density_resid_groups = [
-#            tails_universe_mask.residues
-#            #set(tails_universe_mask.resids)
-#            for tails_universe_mask in tails_universe_masks
-#            ]
-#    
-#    # combining the contour and the density for leaflet clustering
-#    leaflet_selections = []
-#    for lipid_contour_resid_group in lipid_contour_resid_groups:
-#        for tail_density_resid_group in tail_density_resid_groups:
-#            #current_resids = np.array(list(
-#            #        lipid_contour_resid_group.intersection(
-#            #            tail_density_resid_group)), dtype=int
-#            #        )
-#            current_residues = lipid_contour_resid_group.intersection(
-#                tail_density_resid_group
-#            )
-#            if current_residues:
-#                leaflet_selections.append(current_residues.atoms)
-#    universe_masks = leaflet_selections
-#    
-#    return universe_masks
-
-#def leaflet_clustering2(
-#        universe, lipid_resnames, tail_names, headgroup_names, 
-#        resolution = 1, density = 0.01, inv_density = False, 
-#        min_cluster_size = 5
-#        ):
-#    """
-#    Clusters each lipid leaflet in the universe based on the the 
-#    tails and the headgroups in the outwards contour of the lipid densities. 
-#    Lipid names and resnames should be a list of strings. 
-#    The output is a list of of leaflet universes.
-#    """
-#    # Handling input names etc.
-#    lipids_query = ' or '.join(
-#            ['resname {}'.format(lipid) for lipid in lipid_resnames]
-#            )
-#    headgroups_query = ' or '.join(
-#            ['name {}'.format(headgroup) for headgroup in headgroup_names]
-#            )
-#    tails_query = ' or '.join(
-#            ['name {}'.format(tail) for tail in tail_names]
-#            )
-#    
-#    lipids_selection = universe.select_atoms(lipids_query)
-#    headgroups_selection = lipids_selection.select_atoms(headgroups_query)
-#    tails_selection = lipids_selection.select_atoms(tails_query)
-#    
-#    # Clustering the lipid tails densities
-#    current_selection = tails_selection
-#    explicit_matrix_tails, voxel2atoms_tails = clus.generate_explicit_matrix(
-#        tails_selection, resolution = resolution, density = density, 
-#        inv_density = inv_density, verbose = False
-#        )
-#    current_clusters = clus.clustering(explicit_matrix_tails)[1]
-#    tails_universe_masks = universe_clusters(current_clusters, 
-#                                             voxel2atoms_tails, 
-#                                             current_selection)
-#    tails_density_resid_groups = [
-#            tails_universe_mask.residues
-#            for tails_universe_mask in tails_universe_masks
-#            ]
-#    
-#    # Selecting all headgroups within the outward contour of the lipid tails
-#    explicit_matrix_headgroups, voxel2atoms_headgroups = clus.generate_explicit_matrix(
-#        headgroups_selection, resolution = resolution, density = density, 
-#        inv_density = inv_density, verbose = False
-#        )
-#    #filtered_mask_headgroups = explicit_matrix_headgroups - explicit_matrix_tails
-#    #filtered_mask_headgroups[filtered_mask_headgroups < 0] = 0
-#    filtered_mask_headgroups = explicit_matrix_headgroups
-#    #plot_voxels(explicit_matrix_tails)
-#    #plot_voxels(filtered_mask_headgroups)
-#    
-#    # Clustering selected headgroup densities
-#    volume_clusters_headgroups = clus.clustering(filtered_mask_headgroups)[1]
-#    headgroups_universe_masks = universe_clusters(volume_clusters_headgroups, 
-#                                             voxel2atoms_headgroups, 
-#                                             headgroups_selection)
-#    headgroups_density_resid_groups = [
-#            headgroups_universe_mask.residues
-#            for headgroups_universe_mask in headgroups_universe_masks
-#            ]    
-#    
-#    # Combinatorial sets are created for resids in a headgroup and tail cluster
-#    leaflet_selections = []
-#    for headgroups_density_resid_group in headgroups_density_resid_groups:
-#        for tails_density_resid_group in tails_density_resid_groups:
-#            #current_resids = np.array(list(
-#            #        lipid_contour_resid_group.intersection(
-#            #            tail_density_resid_group)), dtype=int
-#            #        )
-#            current_residues = headgroups_density_resid_group.intersection(
-#                tails_density_resid_group
-#            )
-#            if current_residues:
-#                leaflet_selections.append(current_residues.atoms)
-#    universe_masks = leaflet_selections
-#    return universe_masks
-
 #@profile
 def leaflet_clustering3(
         universe, lipid_resnames, tail_names, 
@@ -236,20 +90,14 @@ def leaflet_clustering3(
     and resname should be a list of strings. The output is a list of of leaflet
     atomgroups.
     """   
+    # handling selection input
     lipids_query = ' or '.join(
             ['resname {}'.format(lipid) for lipid in lipid_resnames]
             )
-    # not being used atm
-    #headgroups_query = ' or '.join(
-    #        ['name {}'.format(headgroup) for headgroup in headgroup_names]
-    #        )
     tails_query = ' or '.join(
             ['name {}'.format(tail) for tail in tail_names]
             )
     lipids_selection = universe.select_atoms(lipids_query)
-    # not being used atm
-    #headgroups_selection = lipids_selection.select_atoms(headgroups_query)
-    
     tails_selection = lipids_selection.select_atoms(tails_query)
 
     # clustering the tail density for tail grouping
@@ -261,12 +109,11 @@ def leaflet_clustering3(
                                              current_selection)
     tail_density_resid_groups = [
             tails_universe_mask.residues
-            #set(tails_universe_mask.resids)
             for tails_universe_mask in tails_universe_masks
             ]
-    
+
+    # clustering the lipid contours per tail density group     
     list_lipid_contour_resid_groups = []
-    # clustering the lipid contours per tail density group 
     for tail_density_resid_group in tail_density_resid_groups:
         current_selection = tail_density_resid_group.atoms
         current_clusters, current_mapping = contour_clustering(current_selection, 
@@ -275,13 +122,11 @@ def leaflet_clustering3(
                                               current_mapping, 
                                               current_selection)
         lipid_contour_resid_groups = [
-                #set(lipids_universe_mask.resids)
                 lipids_universe_mask.residues
                 for lipids_universe_mask in lipids_universe_masks
                 ]
         list_lipid_contour_resid_groups += lipid_contour_resid_groups
-    
-    
+        
     # combining the contour and the density for leaflet clustering
     leaflet_selections = []
     for lipid_contour_resid_group in list_lipid_contour_resid_groups:
@@ -301,7 +146,7 @@ def leaflet_clustering3(
 
 # An attempt of allowing clustering of leaflets containing proteins.
 def leaflet_clustering4(
-        universe, lipid_resnames, tail_names, protein_names 
+        universe, lipid_resnames, tail_names, exclusion_names = None, 
         resolution = 1, density = 0.01, inv_density = False, 
         min_cluster_size = 5
         ):
@@ -312,58 +157,73 @@ def leaflet_clustering4(
     past their position. Lipid resnames, tail names and protein names should 
     be a list of strings. The output is a list of of leaflet atomgroups.
     """   
+    # handling selection input
     lipids_query = ' or '.join(
             ['resname {}'.format(lipid) for lipid in lipid_resnames]
             )
     tails_query = ' or '.join(
             ['name {}'.format(tail) for tail in tail_names]
             )
-    protein_query = ' or '.join(
-            ['name {}'.format(name) for name in protein_names]
-            )
     lipids_selection = universe.select_atoms(lipids_query)
     tails_selection = lipids_selection.select_atoms(tails_query)
-    protein_selection = universe.select_atoms(protein_query)
-    ### THIS IS WHERE I SHOULD CONTINUE!!! ###
+    
+    # creating the exclusion mask for clustering around the proteins
+    #   this will be use to set the protein (flanking) pixels to touched
+    #   in the clustering queue. Therefore they will act as a stop. 
+    if exclusion_names is not None:
+        exclusions_query = ' or '.join(
+                ['name {}'.format(name) for name in exclusion_names]
+                )
+        exclusions_selection = universe.select_atoms(exclusions_query)
+        # protein volume mask
+        explicit_matrix_exclusions = clus.generate_explicit_matrix(
+                exclusions_selection, resolution = resolution, 
+                density = density, inv_density = inv_density, verbose = False
+                )[0]
 
+        # protein contour (O) mask
+        outward_contour_exclusions = clus.smear_3d_matrix(
+                explicit_matrix_exclusions, inv=False
+                )
+        # protein volume+contour(O) mask
+        exclusion_mask = explicit_matrix_exclusions+outward_contour_exclusions
+        exclusion_mask[exclusion_mask > 1] = 1
+    else:
+        exclusion_mask = None
+        
     # clustering the tail density for tail grouping
     current_selection = tails_selection
-    current_clusters, current_mapping = volume_clustering(current_selection, 
-                                                          resolution)
+    current_clusters, current_mapping = volume_clustering(
+            current_selection, exclusion_mask, resolution
+            )
     tails_universe_masks = universe_clusters(current_clusters, 
                                              current_mapping, 
                                              current_selection)
     tail_density_resid_groups = [
             tails_universe_mask.residues
-            #set(tails_universe_mask.resids)
             for tails_universe_mask in tails_universe_masks
             ]
-    
-    list_lipid_contour_resid_groups = []
+ 
     # clustering the lipid contours per tail density group 
+    list_lipid_contour_resid_groups = []
     for tail_density_resid_group in tail_density_resid_groups:
         current_selection = tail_density_resid_group.atoms
-        current_clusters, current_mapping = contour_clustering(current_selection, 
-                                                           resolution)
+        current_clusters, current_mapping = contour_clustering(
+                current_selection, exclusion_mask, resolution
+                )
         lipids_universe_masks = universe_clusters(current_clusters, 
-                                              current_mapping, 
-                                              current_selection)
+                                                  current_mapping, 
+                                                  current_selection)
         lipid_contour_resid_groups = [
-                #set(lipids_universe_mask.resids)
                 lipids_universe_mask.residues
                 for lipids_universe_mask in lipids_universe_masks
                 ]
         list_lipid_contour_resid_groups += lipid_contour_resid_groups
     
-    
     # combining the contour and the density for leaflet clustering
     leaflet_selections = []
     for lipid_contour_resid_group in list_lipid_contour_resid_groups:
         for tail_density_resid_group in tail_density_resid_groups:
-            #current_resids = np.array(list(
-            #        lipid_contour_resid_group.intersection(
-            #            tail_density_resid_group)), dtype=int
-            #        )
             current_residues = lipid_contour_resid_group.intersection(
                 tail_density_resid_group
             )
@@ -373,74 +233,8 @@ def leaflet_clustering4(
     
     return universe_masks
 
-#def headgroups_leaflet_clustering(universe, lipid_resnames, tail_names,
-#        headgroup_names,
-#        resolution = 1, density = 0.01, inv_density = False, 
-#        min_cluster_size = 5
-#        ):
-#    """
-#    Clusters each lipid leaflet in the universe based on the the 
-#    tails and headgroups of the given lipids in the universe. Names and 
-#    resname should be a list of strings. The output is a list of of leaflet
-#    universes.
-#    """
-#    lipids_query = ' or '.join(
-#            ['resname {}'.format(lipid) for lipid in lipid_resnames]
-#            )
-#    # not being used atm
-#    headgroups_query = ' or '.join(
-#            ['name {}'.format(headgroup) for headgroup in headgroup_names]
-#            )
-#    tails_query = ' or '.join(
-#            ['name {}'.format(tail) for tail in tail_names]
-#            )
-#    lipids_selection = universe.select_atoms(lipids_query)
-#    # not being used atm
-#    headgroups_selection = lipids_selection.select_atoms(headgroups_query)
-#    
-#    tails_selection = lipids_selection.select_atoms(tails_query)
-#
-#    # playing around with leaflet selector and it seems to work
-#    # clustering the lipid contours
-#    current_selection = headgroups_selection
-#    current_clusters, current_mapping = volume_clustering(current_selection, 
-#                                                          resolution)
-#    headgroups_universe_masks = universe_clusters(current_clusters, 
-#                                              current_mapping, 
-#                                              current_selection)
-#    headgroups_resid_groups = [
-#            set(headgroups_universe_mask.resids)
-#            for headgroups_universe_mask in headgroups_universe_masks
-#            ]
-#    # clustering the tail density for tail grouping
-#    current_selection = tails_selection
-#    current_clusters, current_mapping = volume_clustering(current_selection, 
-#                                                          resolution)
-#    tails_universe_masks = universe_clusters(current_clusters, 
-#                                             current_mapping, 
-#                                             current_selection)
-#    tail_density_resid_groups = [
-#            set(tails_universe_mask.resids)
-#            for tails_universe_mask in tails_universe_masks
-#            ]
-#    
-#    # combining the contour and the density for leaflet clustering
-#    leaflet_selections = []
-#    for headgroups_resid_group in headgroups_resid_groups:
-#        for tail_density_resid_group in tail_density_resid_groups:
-#            current_resids = np.array(list(
-#                    headgroups_resid_group.intersection(
-#                            tail_density_resid_group)), dtype=int
-#            )
-#            if len(current_resids) >= 1:
-#                leaflet_universe = universe.atoms.residues[current_resids]        
-#                leaflet_selections.append(leaflet_universe)
-#    universe_masks = leaflet_selections
-#    
-#    return universe_masks
-    
 def mf_leaflet_clustering(universe, lipid_resnames, 
-                          tail_names, headgroup_names, resolution = 1, 
+                          tail_names, protein_names, resolution = 1, 
                           density = 0.01, inv_density = False, 
                           min_cluster_size = 5, plotting = False,
                           skip = 1, reduce_points = 10, 
@@ -483,8 +277,8 @@ def mf_leaflet_clustering(universe, lipid_resnames,
         # Clustrering 1.0
         #universe_masks = leaflet_clustering(universe, lipid_resnames, 
         #                                    tail_names, resolution = resolution)
-        universe_masks = leaflet_clustering3(universe, lipid_resnames, 
-                                            tail_names,
+        universe_masks = leaflet_clustering4(universe, lipid_resnames, 
+                                            tail_names, protein_names,
                                             resolution = resolution)
         
         if return_selections:
@@ -527,90 +321,81 @@ def main():
     plotting = bool(int(plotting))
     # some basic lipid stuff, this will be moved to an input file
     lipids = ['DLPC', 'DLPS', 'DOPE', 'DOTAP', 'DYPC', 'DYPS', 'LYPC', 'LYPS']
-    headgroups = ['CNO', 'NC3', 'NH3', 'PO4', 'TAP', 'GL1', 'GL2']
-    #selection clustering-2.0
-    #tails = ['C1A', 'C1B', 'C2A', 'C2B', 'C3A', 'C3B', 'C4A', 
-    #         'C4B', 'D1A', 'D1B', 'D2A', 'D2B', 'D3A', 'D3B', 
-    #         'D4A', 'D4B']
-    tails = ['C2A', 'C2B', 'D2A', 'D2B', 'C3A', 'C3B', 'D3A', 'D3B']
-    protein = ['BB1', 'BB2', 'BB3', 'SC1', 'SC2', 'SC3', 'SC4', 'SC5']
-    #selection clustering-1.0
-    #tails = ['C3A', 'C3B', 'C4A', 'C4B']
+#   # the plasmamembrane lipids
+#    lipids = ['PIPX',	
+#'PEPC',	
+#'PAPC',	
+#'DAPC',	
+#'POPE',	
+#'PAPE',	
+#'DAPE',	
+#'PUPE',	
+#'DPSM',	
+#'DPG1',	
+#'DXG1',	
+#'PNG1',	
+#'XNG1',	
+#'DPG3',	
+#'PNG3',	
+#'XNG3',	
+#'PIDG',	
+#'CHOL',	
+#'PIPC',	
+#'DUPE',	
+#'PGSM',	
+#'PNSM',	
+#'PIPS',	
+#'PAPS',	
+#'PIPI',	
+#'POPA',	
+#'POP1',	
+#'PUDG',	
+#'POPX',	
+#'DOPE',	
+#'PIPE',	
+#'DBSM',	
+#'DXG3',	
+#'DPCE',	
+#'DXCE',	
+#'PPC',  
+#'POPC',	
+#'PQPE',	
+#'POPS',	
+#'PUPS',	
+#'XNSM',	
+#'PNCE',	
+#'PADG',	
+#'DOPC',	
+#'PUPC',	
+#'DXSM',	
+#'POSM',	
+#'BNSM',	
+#'XNCE',	
+#'APC',  
+#'PODG',	
+#'POPI',	
+#'DUPS',	
+#'IPC',  
+#'UPC',  
+#'PQPS',	
+#'PAPI',	
+#'PUPI',	
+#'POP2',	
+#'POP3',	
+#'DAPS',	
+#'PUPA',	
+#'PIPA',	
+#'PAPA',	
+#'OPC',]
 
-    clusters = mf_leaflet_clustering(data, lipids, tails, headgroups, 
+    #headgroups = ['CNO', 'NC3', 'NH3', 'PO4', 'TAP', 'GL1', 'GL2']
+    tails = ['C2A', 'C2B', 'D2A', 'D2B', 'C3A', 'C3B', 'D3A', 'D3B']
+    exclusions = ['BB', 'SC1', 'SC2', 'SC3', 'SC4', 'SC5']
+    #exclusions = ['nope']
+    clusters = mf_leaflet_clustering(data, lipids, tails, exclusions, 
                                      plotting = plotting, 
                                      skip = skip, reduce_points = 20, 
                                      return_selections = True)
 
 if __name__ == '__main__':
     main()
-
-#not working, but very useful to make it work
-#with open('cluster_list.pkl', 'wb') as f:
-#    pickle.dump(clusters, f)
-
-## weird syntaxt, but flexible in a sense, it generates a rename selection
-##  from a list.
-#selection_resnames = ['DOPE', 'DOTAP']
-##selection_headgroups = ['PO4', '']
-##selection_resnames = ['DLPC', 'DLPS', 'LYPC', 'LYPS', 'DYPC', 'DYPS']
-#selection_string = ' or '.join([' '.join(subquery) for subquery in list(
-#        itertools.product(['resname'], selection_resnames))]
-#        )
-#lipoplex_lipids = u.select_atoms(selection_string)
-## unit conversion from Angstrom to nm.
-#test_data = lipoplex_lipids.positions/10
-#print('{} particles to cluster.'.format(test_data.shape[0]))
-#plotting = False
-#
-### set universe active frame
-##u.trajectory[45]
-#
-#total_clusters = []
-#for _ in u.trajectory[:]:
-#    print('\rWorking at frame {}/{}'.format(u.trajectory.frame, 
-#                                            len(u.trajectory)-1), end='')
-#    contour_clusters, voxel2atoms = contour_clustering(test_data)
-#    total_clusters.append(len(contour_clusters)-1)
-#print()
-#print(total_clusters)
-
-
-#### transform the compressed matrix into an explicit matrix
-#explicit_matrix, voxel2atoms = clus.generate_explicit_matrix(
-#        test_data, resolution = 1, density = 0.01, inv_density = False
-#        )
-#if plotting:
-#    print('Plotting the density mask:')
-#    clus.plot_voxels(explicit_matrix)
-#
-#### clustering the densities
-#
-#density_cluster_state_mask, density_clusters = clus.clustering(explicit_matrix) 
-## plotting the density clusters
-#if plotting:
-#    print('The density cluster(s):')
-#    clus.plot_clusters(
-#            density_cluster_state_mask, density_clusters, min_cluster_size = 5
-#            )
-
-
-#### calculating the contour mask
-#contour_mask = clus.smear_3d_matrix(explicit_matrix)
-#if plotting:
-#    print('Plotting the contour mask:')
-#    clus.plot_voxels(contour_mask)
-#
-#### clustering the contours
-#contour_cluster_state_mask, contour_clusters = clus.clustering(contour_mask)
-## plotting the contour clusters
-#if plotting:
-#    print('The contour cluster(s):')
-#    clus.plot_clusters(
-#            contour_cluster_state_mask, contour_clusters, 
-#            min_cluster_size = min_cluster_size
-#            )
-#
-#print('{} density cluster(s) and {} contour cluster(s) were detected.'.format(
-#        len(density_clusters)-1, len(contour_clusters)-1)
-#        )
