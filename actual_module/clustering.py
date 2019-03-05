@@ -35,7 +35,7 @@ def read_config(config_file='MDclustering.inp', verbose = False):
 
 #### This is where it all happens
 #@profile
-def generate_explicit_matrix(universe, resolution, density, specified_dim = False, 
+def generate_explicit_matrix(atomgroup, resolution, density, specified_dim = False, 
                              inv_density = False, no_zero = True, verbose = False):
     """
     Takes a compressed 3d matrix and returns it as an explicit 3d matrix.
@@ -48,11 +48,11 @@ def generate_explicit_matrix(universe, resolution, density, specified_dim = Fals
     """
     # protecting the original matrix
     # /10 for angstrom to nm conversion
-    array = copy.copy(universe.positions/10)
+    array = copy.copy(atomgroup.positions/10)
     # find the extremes to determine the final size of the explicit binned matrix
     #x_max, y_max, z_max = np.max(array[:,0]), np.max(array[:,1]), np.max(array[:,2])
     if not specified_dim:
-        limits = np.array([universe.dimensions[:3]/10])
+        limits = np.array([atomgroup.dimensions[:3]/10])
     else:
         limits = np.array(specified_dim)
     # adapting the binning to the resolution
