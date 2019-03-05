@@ -50,7 +50,7 @@ def contour_clustering(
     contour_cluster_state_mask, contour_clusters = clus.clustering(
             contour_mask, exclusion_mask)
     #plot_voxels(contour_mask)
-    return contour_clusters, voxel2atoms
+    return contour_clusters, voxel2atoms, contour_cluster_state_mask
 
 #@profile
 def volume_clustering(
@@ -72,7 +72,7 @@ def volume_clustering(
     #plot_voxels(explicit_matrix)
     volume_cluster_state_mask, volume_clusters = clus.clustering(
             explicit_matrix, exclusion_mask)
-    return volume_clusters, voxel2atoms
+    return volume_clusters, voxel2atoms, volume_cluster_state_mask
     
 def universe_clusters(clusters, mapping, selection):
     """
@@ -84,7 +84,7 @@ def universe_clusters(clusters, mapping, selection):
                 mapping['x{}y{}z{}'.format(voxel[0], voxel[1], voxel[2])] 
                 for voxel in clusters[cluster]
                 ]
-        indexes = np.concatenate(indexes)
+        indexes = np.concatenate(indexes).astype(int)
         assert np.unique(indexes).shape == indexes.shape, 'Indices should appear only once'
         universe_masks.append(selection[indexes])
     return universe_masks
@@ -125,7 +125,7 @@ def leaflet_clustering(
     current_selection = tails_selection
     current_clusters, current_mapping = volume_clustering(
             current_selection, exclusion_mask, resolution
-            )
+            )[:2]
     tails_universe_masks = universe_clusters(current_clusters, 
                                              current_mapping, 
                                              current_selection)
@@ -140,7 +140,112 @@ def leaflet_clustering(
         current_selection = tail_density_resid_group.atoms.intersection(lipids_selection)
         current_clusters, current_mapping = contour_clustering(
                 current_selection, exclusion_mask, resolution
+                )[:2]
+        lipids_universe_masks = universe_clusters(current_clusters, 
+                                                  current_mapping, 
+                                                  current_selection)
+        lipid_contour_resid_groups = [
+                lipids_universe_mask.residues
+                for lipids_universe_mask in lipids_universe_masks
+                ]
+        list_lipid_contour_resid_groups += lipid_contour_resid_groups
+    
+    # combining the contour and the density for leaflet clustering
+    leaflet_selections = []
+    for lipid_contour_resid_group in list_lipid_contour_resid_groups:
+        for tail_density_resid_group in tail_density_resid_groups:
+            current_residues = lipid_contour_resid_group.intersection(
+                tail_density_resid_group
+            )
+            if current_residues:
+                leaflet_selections.append(current_residues.atoms)
+    # generating the final array per frame indicating for each atom its cluster
+    out_array = np.zeros((len(universe.atoms), ))
+    for idx, leaflet_selection in enumerate(leaflet_selections):
+        out_array[leaflet_selection.indices] = idx+1
+    
+    return out_array
+
+def leaflet_clustering2(
+        universe, lipids_selection, tails_selection, 
+        exclusions_selection = None, 
+        resolution = 1, density = 0.01,
+        ):
+    """
+    Clusters each lipid leaflet in the universe based on the 
+    tails and full lipids of the given lipids in the universe. It treats 
+    exclusions as a local cluster stop, preventing clustering
+    past their position, this is usefull when the bilayer contains proteins. 
+    All selections should be MDAnalysis atom_groups. The output is an 
+    array with a cluster value for each atom. After obtaining the first leaflet
+    contour, the contour is expanded so that it also contains the lipids right 
+    under the first layer.
+    """   
+    # creating the exclusion mask for clustering around the proteins
+    #   this will be use to set the protein (flanking) pixels to touched
+    #   in the clustering queue. Therefore they will act as a stop. 
+    if exclusions_selection is not None:
+        # protein volume mask
+        explicit_matrix_exclusions = clus.generate_explicit_matrix(
+                exclusions_selection, resolution = resolution, 
+                density = density, inv_density = False, verbose = False
+                )[0]
+        # protein contour (O) mask
+        outward_contour_exclusions = clus.smear_3d_matrix(
+                explicit_matrix_exclusions, inv=False
                 )
+        # protein volume+contour(O) mask
+        exclusion_mask = explicit_matrix_exclusions+outward_contour_exclusions
+        exclusion_mask[exclusion_mask > 1] = 1
+    else:
+        exclusion_mask = None
+        
+    # clustering the tail density for tail grouping
+    current_selection = tails_selection
+    current_clusters, current_mapping, volume_cluster_state_mask = volume_clustering(
+            current_selection, exclusion_mask, resolution
+            )
+    tails_universe_masks = universe_clusters(current_clusters, 
+                                             current_mapping, 
+                                             current_selection)
+    tail_density_resid_groups = [
+            tails_universe_mask.residues
+            for tails_universe_mask in tails_universe_masks
+            ]
+ 
+    # clustering the lipid contours per tail density group 
+    list_lipid_contour_resid_groups = []
+    for tail_density_resid_group in tail_density_resid_groups:
+        current_selection = tail_density_resid_group.atoms.intersection(lipids_selection)
+        current_clusters, current_mapping, contour_cluster_state_mask = contour_clustering(
+                current_selection, exclusion_mask, resolution
+                )
+        # Expanding contour per contour cluster
+        #  this is a still experimental part, the voxels are not only grown 
+        #  inwards, thus the set check might be more expensive. We could 
+        #  first make an explicit matrix for the whole lipds in the current
+        #  lipid tail density group, but I am not sure if this is less overhead.
+        #  A double hit voxel should not be silently overwritten, but not 
+        #  assigned at all. This is also not happening for the first layer
+        #  of the leaflets. This does have a performance impact in the range of
+        #  10% tested for the 4_transfection lipoplex.
+        for cluster in current_clusters:
+            #print(current_clusters[cluster].shape)
+            # we do not want to expand the void cluster
+            if cluster == 0:
+                continue
+            contour_mask = np.zeros(contour_cluster_state_mask.shape[1:], )
+            # creating contour cluster specific mask
+            contour_mask[contour_cluster_state_mask[1] == cluster] = 1
+            # smearing the contour cluster outwards
+            contour_mask = clus.smear_3d_matrix(contour_mask, inv = False)
+            # adding the new oxels to the cluster
+            extra_voxels = []
+            extra_voxels = np.array(np.where(contour_mask == 1)).T
+            current_clusters[cluster] = np.vstack((
+                    current_clusters[cluster], extra_voxels)).astype(int)
+        
+        
         lipids_universe_masks = universe_clusters(current_clusters, 
                                                   current_mapping, 
                                                   current_selection)
@@ -169,7 +274,7 @@ def leaflet_clustering(
 def mf_leaflet_clustering(universe, lipids_selection, 
                           tails_selection, exclusions_selection = None, 
                           resolution = 1, density = 0.01, skip = 1,  
-                          return_selections = True, 
+                          return_selections = True, datatype = 'uint32'
                           ):
     """
     MultiFrame Leaflet Clustering
@@ -177,7 +282,8 @@ def mf_leaflet_clustering(universe, lipids_selection,
     Clusters each lipid leaflet in the universe.trajectory based on the the 
     tails_selection and lipids_selection in the corresponding universe. 
     The output is an array containing the cluster per atom per frame. 
-    Skip is used to skip frames for analysis.
+    Skip is used to skip frames for analysis. The cluster array is in a
+    unsigned 32 bit format by default, allowing for 4294967296 unique clusters.
     """
  
     start = time.time()
@@ -196,14 +302,15 @@ def mf_leaflet_clustering(universe, lipids_selection,
         sys.stdout.flush()
         
         # the actual clustering
-        universe_masks = leaflet_clustering(universe, lipids_selection, 
+        universe_masks = leaflet_clustering2(universe, lipids_selection, 
                                              tails_selection, 
                                              exclusions_selection,
                                              resolution = resolution) 
-        clusters.append(universe_masks)  
+        # We need to manage the file and memory space a bit.
+        clusters.append(universe_masks.astype(datatype))  
         
     print()
-    clusters = np.array(clusters)
+    clusters = np.array(clusters, dtype = datatype)
     return clusters
 
 def main():
@@ -247,6 +354,15 @@ def main():
                                      resolution = resolution, 
                                      skip = skip,
                                      )
+    # Maybe has to be handled nicely in the future to prevent super 
+    #  large data files, in the mf function the data is already truncated to 
+    #  uint32. The amount of disk space scales perfectly linear witht the 
+    #  bit accuracy of the files. uint32 allows for 4294967296 unique
+    #  clusters. If you expect to have more unique clusters you have to 
+    #  change the accuracy.
+    clusters = clusters.astype('uint32')
+    np.save('uint32bin-{}'.format(output_file), clusters)
+    
     # some basic plotting
     if plotting:
         try:
@@ -279,8 +395,6 @@ def main():
             #plt.show()
             plt.close()
     
-    # writing the output at once
-    np.savetxt(output_file, clusters)
     
     return clusters
 
