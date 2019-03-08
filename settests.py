@@ -128,7 +128,7 @@ if  compare_clusters(olddict3,frame23,8,1) == test3:
    print("test3 ok :)")
         
 
-data = np.load('/home/bart/projects/clustering/test_files/uint32bin-clusters.dat.npy')
+data = np.load('/home/albert/projects/clustering/MDVoxelClustering/test_files/uint32bin-clusters.dat.npy')
 
 # single frame set creation for all sets
 #for frame in data:
@@ -147,37 +147,30 @@ for idx, frame in enumerate(data):
     for cluster in set(frame):     
         newcluster.append(set(np.where(frame == cluster)[0]))  
     olddict, clustercount, changes = compare_clusters(olddict, newcluster,clustercount,idx)
-    if changes:    
-        changelog[idx] = changes
-    for change in changes:
-        print([change[0]])
-        print([change[1]])
-        print(changes)
-       #S print(set(frame))
-       # frame[frame == change[0]] = change[1]
-        print(set(frame))
+    for key, value in olddict.items():
+        for index in value:
+            frame[index] = key
 
 
 
-print(changelog)
-aliases = { 0 : set()}
-replacelist = deque()
-replacelist.append((0,[0]))
-print(replacelist[-1][1])
-for time, changes in changelog.items():
-    for change in changes:
-        if change[2] == 'm':
-            aliases[change[0]].append((change,time))
-            replacelist.append((time,replacelist[-1][1].remove(change[0])))
-        elif change[2] == 'c':
-            newclus = max(aliases,key=int)+1
-            aliases[max(aliases,key=int)+1] = [(change,time)]   
-            print(replacelist)
-            replacelist.append((time,copy.copy(replacelist[-1][1]).append(newclus)))
-
-
-
-print(aliases)
-print(replacelist)
+#aliases = { 0 : set()}
+#replacelist = deque()
+#replacelist.append((0,[0]))
+#print(replacelist[-1][1])
+#for time, changes in changelog.items():
+#    for change in changes:
+#        if change[2] == 'm':
+#            aliases[change[0]].append((change,time))
+#            replacelist.append((time,replacelist[-1][1].remove(change[0])))
+#        elif change[2] == 'c':
+#            newclus = max(aliases,key=int)+1
+#            aliases[max(aliases,key=int)+1] = [(change,time)]   
+#            print(replacelist)
+#            replacelist.append((time,copy.copy(replacelist[-1][1]).append(newclus)))
+#
+#
+#
+#print(aliases)
+#print(replacelist)
         
     
