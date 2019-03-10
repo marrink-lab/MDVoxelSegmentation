@@ -138,7 +138,7 @@ def leaflet_clustering(
         current_selection = tail_density_resid_group.atoms.intersection(lipids_selection)
         current_clusters, current_mapping, cluster_volume, cluster_contour = contour_clustering(
                 current_selection, exclusion_mask, resolution
-                )[:2]
+                )
         lipids_universe_masks = universe_clusters(current_clusters, 
                                                   current_mapping, 
                                                   current_selection)
@@ -215,9 +215,9 @@ def leaflet_clustering2(
     list_lipid_contour_resid_groups = []
     for tail_density_resid_group in tail_density_resid_groups:
         current_selection = tail_density_resid_group.atoms.intersection(lipids_selection)
-        current_clusters, current_mapping, contour_cluster_state_mask = contour_clustering(
+        current_clusters, current_mapping, explicit_matrix  = contour_clustering(
                 current_selection, exclusion_mask, resolution
-                )
+                )[:3]
         # Expanding contour per contour cluster
         #  this is a still experimental part, the voxels are not only grown 
         #  inwards, thus the set check might be more expensive. We could 
@@ -232,7 +232,7 @@ def leaflet_clustering2(
             # we do not want to expand the void cluster
             if cluster == 0:
                 continue
-            contour_mask = np.zeros(cluster_contour.shape, dtype = bool)
+            contour_mask = np.zeros(explicit_matrix.shape, dtype = bool)
             # creating contour cluster specific mask
             selection = np.array(current_clusters[cluster])
             contour_mask[selection[:,0], selection[:,1], selection[:,2]] = True
