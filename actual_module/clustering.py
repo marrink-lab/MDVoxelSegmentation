@@ -1,336 +1,230 @@
-#!/usr/bin/env python
 # coding: utf-8
-
-#from pbcpy.base import pbcarray # needed for pbc clustering
-#import MDAnalysis as mda
 import numpy as np
-import copy
-#import nglview as nv
-#from mpl_toolkits.mplot3d import Axes3D
-#import matplotlib.pyplot as plt
-# allows for realtime plot rendering in notebook
-#%matplotlib notebook
-import itertools
+import MDAnalysis as mda
 import collections
-import sys
-import os
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import copy
+import time
+import itertools
 
-def read_config(config_file='MDclustering.inp', verbose = False):
+def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic'):
     """
-    A simple way to set default clustering settings.
-    """
-    file_is_present = os.path.isfile(config_file) 
-    if file_is_present:
-        exec(open(config_file).read())
-        if verbose:
-            with open(config_file) as f:
-                document = f.readlines()
-            print('The following settings will be used for the clustering.\n')
-            for line in document:
-                print(line.strip())
-            print()
-    else:
-        print("Please create an input file (test_files/MDclustering.inp) with the following format:\n\nresolution  = 1\ndensity     = 0.01\ninv_density = False\nmin_cluster_size = 1\n")
-        sys.exit()
-
-#### This is where it all happens
-#@profile
-def generate_explicit_matrix(atomgroup, resolution, density, specified_dim = False, 
-                             inv_density = False, no_zero = True, verbose = False):
-    """
-    Takes a compressed 3d matrix and returns it as an explicit 3d matrix.
-    The resolution is the relative bin size. A tuple of 3 can be used to 
-    specify the binning dimensions  in nm. It assumes your box has cubic PBC! 
-    Density can be used to specify a minimum voxel density to be added to the 
-    output matrix. The inv_density can be set to true to specify a maximum 
-    density. The no_zero flag will even under the inv_density setting not 
-    return the elements containing 0 elements.
-    """
-    # protecting the original matrix
-    # /10 for angstrom to nm conversion
-    array = copy.copy(atomgroup.positions/10)
-    # find the extremes to determine the final size of the explicit binned matrix
-    #x_max, y_max, z_max = np.max(array[:,0]), np.max(array[:,1]), np.max(array[:,2])
-    if not specified_dim:
-        limits = np.array([atomgroup.dimensions[:3]/10])
-    else:
-        limits = np.array(specified_dim)
-    # adapting the binning to the resolution
-    limits = limits/resolution
-    limits_ints = np.array(np.round(limits), dtype=int)
-    limits_ints = limits_ints.flatten()
-    # making the explicit matrix remove one for pbc
-    explicit_matrix = np.zeros(limits_ints)
-    # converting the data points
-    array = array/resolution # convert data to bins
-    # creating a dicitonary with the atoms inside and the xyz coodirdiantes as keys
-    voxel2atoms = collections.defaultdict(list)
-    # clipping the original matrix to the voxels
-    # warning this implements cubic PBC!!! A similar trick can be done for others
-    array = (array % (limits_ints.T)).astype(int)
-    # adding each poin to the explicit matrix
-    for idx, point in enumerate(array):
-        x, y, z = point
-        try:
-            explicit_matrix[x, y, z] += 1
-        except IndexError:
-            print(limits_ints, point)
-            return
-        # mapping atoms to voxels
-        key = 'x{}y{}z{}'.format(x, y, z)
-        voxel2atoms[key].append(idx)
-    mean = explicit_matrix[explicit_matrix > 0].flatten().mean()
-    if verbose:
-        print('The average bin density is {:.2f}'.format(mean))
-    # clipping the matrix using the specified density or the inverse
-    if inv_density:
-        if no_zero:
-            explicit_matrix[explicit_matrix == 0 ] = density*mean + 1
-        explicit_matrix[explicit_matrix <= density*mean] = 1
-        explicit_matrix[explicit_matrix > density*mean] = 0 
-    else:
-        explicit_matrix[explicit_matrix < density*mean] = 0 
-        explicit_matrix[explicit_matrix >= density*mean] = 1
-    return explicit_matrix, voxel2atoms
-
-#@profile
-def smear_3d_matrix(array, pbc = True, inv=True):
-    """Takes an explicit array and smears it over the axes. This is like
-    a running average in 3D. It returns the smeared array as a new array.
-    By default the pbc is taken to be cubic, this can be turned off.
-    """
-    shift = 1
-    # making the matrix one bigger to prevent problems later on
-    #dimensions = np.array(array.shape)+np.array((2, 2, 2))
-    #array_empty = np.zeros(dimensions)
-    #array_empty[1:-1,1:-1,1:-1] = array
-    occupancy_mask = copy.copy(array)
-    if inv:
-        # inverting the matrix to get the inner boundaries
-        occupancy_mask = np.array(np.logical_not(occupancy_mask),dtype=int)
-    # smearing the matrix
-    blurred_matrix = copy.copy(occupancy_mask)
-    blurred_matrix[shift:] += occupancy_mask[:-shift]
-    blurred_matrix[:-shift] += occupancy_mask[shift:]
-    blurred_matrix[:,shift:] += occupancy_mask[:,:-shift]
-    blurred_matrix[:,:-shift] += occupancy_mask[:,shift:]
-    blurred_matrix[:,:,shift:] += occupancy_mask[:,:,:-shift]
-    blurred_matrix[:,:,:-shift] += occupancy_mask[:,:,shift:]
-    # smearing the pbc boundaries for cubic pbc
-    if pbc:
-        blurred_matrix[0] += occupancy_mask[-1]
-        blurred_matrix[-1] += occupancy_mask[0]
-        blurred_matrix[:,0] += occupancy_mask[:,-1]
-        blurred_matrix[:,-1] += occupancy_mask[:,0]
-        blurred_matrix[:,:,0] += occupancy_mask[:,:,-1]
-        blurred_matrix[:,:,-1] += occupancy_mask[:,:,0]
-    # clipping the matrix, tried density stuff here, but can't work.
-    blurred_matrix[blurred_matrix >= 1] = 1   
-    # obtaining the contours
-    contour_mask = blurred_matrix - occupancy_mask
-    return contour_mask
-
-#@profile
-def clustering_preparing(array):
-    mask_cluster_state_mask = np.array((array,
-                                    np.zeros(array.shape),
-                                    np.zeros(array.shape)))
-    #mask_cluster_state_mask = pbcarray(mask_cluster_state_mask)
-    temp_mask_indices = np.where(array == 1)
-    mask_indices = np.array(list(zip(*temp_mask_indices)),dtype=int)
+    Takes an atomgroup and bins it as close to the resolution as possible.
+    PBC is 'cubic' by default, but can be turned off. No other form of 
+    PBC is currently supported.
     
-    return mask_cluster_state_mask, mask_indices
-
-#@profile
-def cubic_selection(dimensions, position, distance = 1):
-    """Creates a selection mask which can handle cubic pbc."""
-    position = np.array(position)
-    selection = np.array((position-distance, position+distance+1)).T
-    #print('unmodified selection', selection)
-    selection_list = []
-    # create the non continuous axes for the 3 cases (too low,high, or normal)
-    for axes, single_selection in enumerate(selection):
-        #print('axes {} selection unmodified'.format(axes), single_selection)
-        if single_selection[0] < 0:
-            single_selection = (single_selection[1], dimensions[axes]+single_selection[0])
-            temp_ones = np.ones(dimensions[axes])
-            temp_ones[single_selection[0]:single_selection[1]] = 0
-            #print(temp_ones)
-            axes_selection = np.array(np.where(temp_ones)).flatten()
-            #print('axes {} selection modified 1'.format(axes), single_selection)
-            #print(axes_selection)
-        elif single_selection[1] >= dimensions[axes]:
-            single_selection = (single_selection[1] % (dimensions[axes]), single_selection[0])
-            temp_ones = np.ones(dimensions[axes])
-            temp_ones[single_selection[0]:single_selection[1]] = 0
-            axes_selection = np.array(np.where(temp_ones)).flatten()
-            #print('axes {} selection modified 2'.format(axes), single_selection)
-            #print(axes_selection)
-        else:
-            axes_selection = np.arange(single_selection[0], single_selection[1]).flatten()
-            #print('axes {} selection modified 3'.format(axes), single_selection)
-            #print(axes_selection)
-        selection_list.append(axes_selection)
-    # create the coordinates for the neighbours in the non continous selection
-    selection_mask = np.zeros(dimensions)
-    for element in list(itertools.product(selection_list[0], selection_list[1], selection_list[2])):
-        selection_mask[element] = 1
-    return np.array(np.where(selection_mask == 1)).T
-
-#@profile
-def clustering_inner_loop(idx, mask_cluster_state_mask, counter, to_do_list, distance, pbc = True):
-    """A pretty smart clustering procedure."""
-    # this automagically never flies out of bounds :D
-    # this is also wher I have to implement PBC lets start with cbic
-    #  the goal is to make the mask select the other side edges for negative numbers
-    min_distance = idx - distance
-    max_distance = idx + distance + 1
-    simple_indices = np.logical_and(np.all(min_distance >= 0),
-                            np.all(max_distance <= mask_cluster_state_mask.shape[1:]))
-    # either no pbc, or the indexes are not an issue without pbc treatment
-    if not pbc or simple_indices:
-        neighbour_hits = mask_cluster_state_mask[:3, min_distance[0]:max_distance[0], 
-                                                     min_distance[1]:max_distance[1], 
-                                                     min_distance[2]:max_distance[2]]
-        # This is where some cool masks are made for detection of neighbours
-        neighbour_coordinates = neighbour_hits[0].astype(bool) # where?
-        neighbour_clusters = neighbour_hits[1] # ref to cluster positions
-        neighbour_clusters[neighbour_coordinates] = counter # set clusters for found neighbours
-        neighbour_states = neighbour_hits[2].astype(bool) # check state of neighbour
-            
-        # if you are a neighbour and you have not been placed in the queue
-        new_coordinates = np.where(neighbour_coordinates & ~neighbour_states)
-        new_coordinates = np.array(new_coordinates).T
-        try:
-            # transform local to world coordinates
-            new_coordinates = new_coordinates + idx - (1,1,1)
-        except ValueError:
-            return
-        # add the global coordinates of the next iterations
-        to_do_list.extend(new_coordinates)
-        # setting all the neighbours to hit so they will never 
-        #  be done again
-        neighbour_hits[2, :] = 1
-    elif pbc:
-        neighbour_coordinates = cubic_selection(mask_cluster_state_mask.shape[1:], idx, distance)
-        for neighbour_coordinate in neighbour_coordinates:
-            # find occupied voxels this is either 0 or 1
-            neighbour_hit = mask_cluster_state_mask[0,
-                                                     neighbour_coordinate[0],
-                                                     neighbour_coordinate[1],
-                                                     neighbour_coordinate[2]]
-            if neighbour_hit == 1:
-                # set cluster 
-                mask_cluster_state_mask[1,
-                                         neighbour_coordinate[0],
-                                         neighbour_coordinate[1],
-                                         neighbour_coordinate[2]] = counter
-                # append to queue if not touched before
-                if mask_cluster_state_mask[2,
-                                         neighbour_coordinate[0],
-                                         neighbour_coordinate[1],
-                                         neighbour_coordinate[2]] == 0:
-                    to_do_list.append(neighbour_coordinate)
-                # set touched state
-                mask_cluster_state_mask[2,
-                                         neighbour_coordinate[0],
-                                         neighbour_coordinate[1],
-                                         neighbour_coordinate[2]] = 1
-    # this is probably not what the user had in mind
-    else:
-        print(idx, ' could not be processed with the current pbc settings.')
-
-# getting the inner logic solid for clustering
-#@profile
-def clustering(array, exclusion_mask = None, distance = 1, pbc = True):
-    """Takes an index (xyz tuple) and uses the neighbour_mask (array) to search for neighbours in the
-    edge_cluster_mask. It also sets the the touched flag in place in the edge_cluster_state_mask. For all found
-    and processed neighbours. The exlcusion_mask can be used to preset certain 
-    voxels to touched, therefore they act as local clustering stops.
-    
-    ### The matrix need to have no edges in its outer boundary therefore we cheat and add on to all x y z
-    ### we need to do this before
+    Returns
+    (array) 3d boolean with True for occupied bins
+    (dictionary) atom2voxel mapping
     """
-    mask_cluster_state_mask, mask_indices = clustering_preparing(array)
-    # handling possible exclusions
-    if exclusion_mask is not None:
-        mask_cluster_state_mask[2][exclusion_mask > 0 ] = 1
-    # the beginning of the outer cluster loop
-    counter = 0
-    #time = 0 
-    for idx in mask_indices:
-        # genreates a dequeue, which is like a list but cheaper tot pop at front 
-        to_do_list = collections.deque()
-        self_state = mask_cluster_state_mask[2, idx[0], idx[1], idx[2]]
-        if self_state == 0:
-            counter += 1
-            # execute cluster function and start queue for cluster
-            clustering_inner_loop(idx, mask_cluster_state_mask, counter, to_do_list, distance, pbc)
-        while len(to_do_list) > 0: # exhaust all queue members for cluster
-            idx = np.array(to_do_list.popleft())
-            clustering_inner_loop(idx, mask_cluster_state_mask, counter, to_do_list, distance, pbc)
+    # scaling from ansgtrom to nm
+    positions = atomgroup.positions/10
+    # obtaining the matrix raw dimensions
+    dimensions = atomgroup.dimensions[:3]/10
+    
+    # rounding the dimensions to the closest multiple of the resolution
+    mod_dimensions = np.array(divmod(dimensions, resolution))
+    mod_dimensions[1] = np.round(mod_dimensions[1]/resolution)
+    mod_dimensions[0] = mod_dimensions[0]+mod_dimensions[1]
+    
+    # scaling the matrix to the binning
+    scaling = mod_dimensions[0]/(dimensions/resolution)
+    max_error = np.max(np.absolute(scaling-1))
+    if max_error > 0.05:
+        raise ValueError('A scaling artifact has occured of more than 5%, {}% deviation from the target resolution in frame {} was detected. You could consider increasing the resolution.'.format(np.abs(scaling-1)*100, atomgroup.universe.trajectory.frame))
+    scaled_positions = ((positions * scaling) / resolution).astype(int)
+  
+    # fixing cubic PBC
+    if PBC == 'cubic':
+        scaled_positions = scaled_positions % mod_dimensions[0]
         
-    clusters = set(mask_cluster_state_mask[1].flatten()) # a set is always returned low to high?
-    cluster_dict ={}
-    for x in range(len(clusters)):
-        cluster_dict[x] = np.array(np.where(mask_cluster_state_mask[1,:,:,:] ==x)).T #Create a Dictionary to store voxels by cluster
-    return mask_cluster_state_mask, cluster_dict
+    # making an empty explicit matrix
+    explicit_matrix = np.zeros((mod_dimensions[0].astype(int)),)
+    
+    # filling the explicit_matrix
+    scaled_positions = scaled_positions.astype('int')
+    explicit_matrix[scaled_positions[:,0], scaled_positions[:,1], scaled_positions[:,2]] = 1
+    
+    # generating the mapping dictionary
+    voxel2atom = collections.defaultdict(list)
+    for atom_index, scaled_position in enumerate(scaled_positions):
+        x, y, z = scaled_position
+        voxel2atom['x{}y{}z{}'.format(x, y, z)].append(atom_index)
+    
+    return explicit_matrix.astype(bool), voxel2atom
+
+def blur_matrix(matrix, span = 1, PBC = 'cubic'):
+    """
+    Blurs a 3d boolean matrix by adding the values which are within span range.
+    Default behaviour is using the inverse of the input matrix. This results in 
+    an inner smearing useful for generating the inner contour. The opisite is 
+    useful for generating the outer smearing for the outer contour. By default
+    it assumes cubic periodic boundary conditions. PBC can currently not be 
+    turned off. 
+    """
+    blurred_matrix = copy.copy(matrix)
+    if PBC == 'cubic':
+        for shift in range(span):
+            for current_axis in range(3):
+                blurred_matrix += np.roll(matrix, shift+1, current_axis)
+                blurred_matrix += np.roll(matrix, -(shift+1), current_axis)
+    return blurred_matrix.astype(bool)
+   
+def gen_contour(matrix, span = 1, inv = True):
+    """
+    Generatates the inner (inv = True), or outer (inv = False) contour of span 
+    around the 3d boolean matrix.
+    """
+    if inv:
+        blurred_matrix = blur_matrix(np.logical_not(matrix), span)
+        return blurred_matrix ^ np.logical_not(matrix)
+    if not inv:
+        blurred_matrix = blur_matrix(matrix, span)
+        return blurred_matrix ^ matrix
+
+def find_neighbours(position, span):
+    """
+    Uses the position to generate a a box width size span around the position.
+    """
+    return itertools.product(
+            range(position[0]-span, position[0]+span+1),
+            range(position[1]-span, position[1]+span+1),
+            range(position[2]-span, position[2]+span+1),
+            )
+    
+# The 3d example of a very clear more set oriented neighbour clustering
+def set_clustering(explicit_matrix, exclusion_mask = False, span = 1, verbose = False):
+    """
+    The 3d example of a very clear more set oriented neighbour voxel clustering.
+    Generation of the set is relatively slow and could maybe be further optimized.
+    
+    Input should be a 3d boolean array.
+    
+    Returns a dictionary of clusters with a list of voxels per cluster.
+    
+    !!!TO BE DONE!!!
+    Add an extra 3d bool input array for exclusion (useful for contaminated clusters such 
+       as membrane leaflets with proteins).
+    Add an extra input dictionary of clusters in the previous frame (useful for
+       simple cluster identity over time). This can be used to draw from, and assign
+       designated cluster based on the precious frame. A split will be indicated by an
+       an overwrite in the dictionary for the cluster name if it has been split up in 
+       the current frame.
+       
+       Example: (cluster, frame)
+       # split (determenistic)
+       (1,0)         --> [(11,1), (12,1)]
+       # merge (determenistic, but not order independent)
+       [(1,0),(2,0)] --> (1,1) or (2,1)
+       # preserved identity
+       (1,0)         --> (1,1)
+       # lost to void
+       (1,0)         --> cluster is no longer used from now on
+       # new from void ($NEXT_AVAIL_CLUSTER is the highest ever used cluster plus one)
+       (-,0)         --> ($NEXT_AVAIL_CLUSTER, 1)
+    """
+    # Obtaining a set for all occupied voxels
+    # starting the timer for generating the set (verbose)
+    start = time.time()
+    # finding all hits (occupied voxels)
+    if exclusion_mask is not False:
+        positions = np.array(np.where(explicit_matrix ^ exclusion_mask == 1)).T
+    else:
+        positions = np.array(np.where(explicit_matrix == 1)).T
+    if verbose:
+        print('There are {} points to cluster.'.format(positions.shape[0]))
+    # initiating the empty set for all hits
+    positions_set = set()
+    # adding each hit to the set as a tuple
+    for position in positions:
+        position = tuple(position)
+        positions_set.add((position))
+    # stop timer for making the hits set (verbose)
+    stop = time.time()
+    if verbose:
+        print('It took {} to make the set.'.format(stop-start))
+
+    # The clustering scales linear and millions of points can be achieved in the minute range.
+    # beginning the timer for clustering (verbose)
+    start = time.time()
+    # the range of the neighbour search (1 is direct neighbour including the diagonal)
+    span = 1
+    # the starting cluster
+    current_cluster = 1
+    # output dictionary containing a list of hits per cluster
+    clusters = {}
+    # the to do queue
+    queue = set()
+    # getting the perdic dimensions
+    dimensions = np.array(explicit_matrix.shape)
+    # as long as there are hits
+    while len(positions_set) > 0:
+        # start the first point and remove from the hits
+        current_position = positions_set.pop()
+        # add self as first to current cluster
+        clusters[current_cluster] = [current_position]
+        # find all neighbours of self
+        current_neighbours = list(itertools.product(range(int(current_position[0]-span), int(current_position[0]+span+1)),
+                                                range(int(current_position[1]-span), int(current_position[1]+span+1)),
+                                                range(int(current_position[2]-span), int(current_position[2]+span+1)),))
+        # checking periodic boundary conditions
+        for idx, neighbour in enumerate(current_neighbours):
+            current_neighbours[idx] = (neighbour[0]%dimensions[0], neighbour[1]%dimensions[1], neighbour[2]%dimensions[2])
+        # add all neighbours to the queue if they are in the hits
+        queue =  positions_set.intersection(current_neighbours)
+        while len(queue) > 0:
+            # obtain current neighbour and remove from queue
+            current_position = queue.pop()
+            # also remove current neighbour from the hits
+            positions_set.remove(current_position)
+            # add self to current cluster
+            clusters[current_cluster].append(current_position)
+            # find all neighbours of self
+            current_neighbours = list(itertools.product(range(int(current_position[0]-span), int(current_position[0]+span+1)),
+                                                        range(int(current_position[1]-span), int(current_position[1]+span+1)),
+                                                        range(int(current_position[2]-span), int(current_position[2]+span+1)),))
+            # checking periodic boundary conditions
+            for idx, neighbour in enumerate(current_neighbours):
+                current_neighbours[idx] = (neighbour[0]%dimensions[0], neighbour[1]%dimensions[1], neighbour[2]%dimensions[2])
+            # add all neighbours to the queue which are in the hits
+            queue = queue.union(positions_set.intersection(current_neighbours))
+        # move to next cluster
+        current_cluster += 1
+    # stopping the timer for clustering (verbose)
+    stop = time.time()
+
+    if verbose:
+        print('It took {} to cluster {} clusters with a total of {} points'.format(stop-start, len(clusters), len(positions)))
+    return clusters
+    
+### Only for testing
+def plot_voxels(array):
+    """
+    Plots a 3d boolean array.
+    """
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.gca(projection='3d')
+    max_size = np.array(array.shape).max()
+    ax.set_xlim(0,max_size)
+    ax.set_ylim(0,max_size)
+    ax.set_zlim(0,max_size)    
+    color = (0.5,0.5,0.5,0.3)
+    edge_color = (1,1,1,0.1)
+    ax.voxels(array, edgecolor=edge_color, facecolor= color)
+    plt.show()
 
 
-#  =============================================================================
-#  def plot_voxels(array):
-#      fig = plt.figure(figsize=(10, 10))
-#      ax = fig.gca(projection='3d')
-#      max_size = np.array(array.shape).max()
-#      ax.set_xlim(0,max_size)
-#      ax.set_ylim(0,max_size)
-#      ax.set_zlim(0,max_size)    
-#      color = (0.5,0.5,0.5,0.3)
-#      edge_color = (1,1,1,0.3)
-#      ax.voxels(array, edgecolor=edge_color, facecolor= color)
-#      plt.show()
-#  
-#  def plot_clusters(array, clusters, min_cluster_size = 5):
-#      """Creates a voxel plot for the clusters in the array never plots cluster 0 and only
-#      shows clusters of size equal or larger than the minimum."""
-#      edge_color = np.array((1,1,1,0.3), dtype=float)
-#      color = np.array((1,1,1,0.3), dtype=float)
-#  
-#      fig = plt.figure(figsize=(10, 10))
-#      ax = fig.gca(projection='3d')
-#      max_size = np.array(array.shape).max()
-#      ax.set_xlim(0,max_size)
-#      ax.set_ylim(0,max_size)
-#      ax.set_zlim(0,max_size)
-#      counter = 0
-#      colors = []
-#      for cluster in clusters:
-#          # automagically skips cluster 0 :D
-#          plot_array = copy.copy(array[1])
-#          plot_array[plot_array != cluster] = 0
-#          plot_array[plot_array > 0] = cluster
-#          color[:3] = np.random.rand(3)
-#          if np.count_nonzero(plot_array.flatten()) >= min_cluster_size:
-#              colors.append(copy.copy(color))
-#              counter += 1
-#              ax.voxels(plot_array, edgecolor=edge_color, facecolors = color)
-#      print('{} cluster(s) have been found >= {} (min_cluster_size)'.format(counter, min_cluster_size))
-#      plt.show()
-#      counter = 0
-#      for cluster in clusters:
-#          plot_array = copy.copy(array[1])
-#          plot_array[plot_array != cluster] = 0
-#          plot_array[plot_array > 0] = cluster
-#          if np.count_nonzero(plot_array.flatten()) >= min_cluster_size:
-#              color = colors[counter]
-#              counter += 1
-#              print('Cluster {}'.format(counter))
-#              fig = plt.figure(figsize=(10, 10))
-#              ax = fig.gca(projection='3d')
-#              max_size = np.array(array.shape).max()
-#              ax.set_xlim(0,max_size)
-#              ax.set_ylim(0,max_size)
-#              ax.set_zlim(0,max_size)
-#              ax.voxels(plot_array, edgecolor=edge_color, facecolors = color)
-#              plt.show()
-#  =============================================================================
+if __name__=='__main__':
+    data = mda.Universe('/home/bart/projects/clustering/test_files/4_adhesion/attached.gro')
+    selection = data.select_atoms('resname DOPE DOTAP')
+    resolution = 1
+
+    start = time.time()
+    explicit_matrix, voxel2atom = gen_explicit_matrix(selection, resolution = resolution)
+    contour_matrix = gen_contour(explicit_matrix, 1, True)
+    print('Making the contour took {}.\nGenerating output figures...'.format(time.time()-start))
+    print('\nCLUSTERING 3, list based cubic boundary fix')
+    clusters = set_clustering(contour_matrix, exclusion_mask = False, span = 1, verbose = True)
+    plot_voxels(explicit_matrix)
+    plot_voxels(contour_matrix)
