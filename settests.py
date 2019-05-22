@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 identity_threshold = 0.5
+cluster_mutations = {}
 
 cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'}
 cluster2 = {'b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
@@ -76,7 +77,11 @@ deprecated_dict = {
         8 : {'b7','b8','b9'}
 }
 
-
+def add_cluster_change(time,change):
+    if time in cluster_mutations:
+        cluster_mutations[time] = cluster_mutations[time].append(change)
+    else 
+        cluster_mutations[time] = [change]
 
 
 def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,frame_number):
@@ -95,8 +100,10 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
                  del output[index]
                  deprecated_clusters[index] = value_out
                  print("cluster " + str(index) + " was merged into cluster " + str(key) + " at frame " + str(frame_number))
+                 add_cluster_change(frame_number,(index,key,"m"))
              else:
                  print("cluster " + str(key) + " was merged into cluster " + str(index) + " at frame " + str(frame_number))   
+                 add_cluster_change(frame_number,(key,index,"m"))
                  deprecated_clusters[key] = value
         else:
             for idx, clusternew in enumerate(clustersnew):
@@ -127,11 +134,13 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
         if remerge:
             output[index_old] = clustersnew.popleft()
             print ("cluster " + str(index_old) + " was recreated from cluster " + str(index) + " at frame " + str(frame_number))
+            add_cluster_change(frame_number,(index_old,index,"rc"))
         else:
             newkey = clusternumber + 1
             clusternumber = newkey
             output[newkey ] = clustersnew.popleft()
             print ("cluster " + str(newkey) + " was created from cluster " + str(index) + " at frame " + str(frame_number))
+            add_cluster_change(frame_number,(newkey,index,"c"))
     return output,clusternumber,deprecated_clusters
 
     
@@ -179,6 +188,8 @@ def sort_clusters(data):
 data, plotinfo = sort_clusters(data)
 
 np.save('clusters_ordered', data)
+np.save('Visualization_data',plotinfo)
+np.save('Cluster_mutations',cluster_mutations)
 #
 #time = range(len(plotinfo))
 #ordered_clusters = plotinfo.values()
