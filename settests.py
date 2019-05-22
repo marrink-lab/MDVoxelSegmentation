@@ -9,6 +9,7 @@ from collections import deque
 import numpy as np
 import matplotlib.pyplot as plt
 
+identity_threshold = 0.5
 
 cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'}
 cluster2 = {'b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
@@ -156,7 +157,7 @@ data = np.load('/coarse/bart/projects/clustering/test_files/4_transfection/clust
 #    olddict[clustercount] =set(np.where(data[0] == (idx))[0])
 #for frame in data:
 #    print(set(frame))
-identity_threshold = 0.5
+
 
 def sort_clusters(data):
     clustercount = 0
