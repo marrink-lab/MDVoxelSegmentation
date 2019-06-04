@@ -78,70 +78,100 @@ deprecated_dict = {
 }
 
 def add_cluster_change(time,change):
+   # print(cluster_mutations)
     if time in cluster_mutations:
-        cluster_mutations[time] = cluster_mutations[time].append(change)
-    else 
+        cluster_mutations[time].append(change)
+    else:
         cluster_mutations[time] = [change]
 
 
 def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,frame_number):
     output = {}
-    
-    for key,value in clustersold.items():
-        likeness_score=index=0
-        if not clustersnew:
-             for key_out,value_out in output.items():
-                 temp_score = len(value.intersection(value_out))/max(len(value),len(value_out)) 
-                 if temp_score > likeness_score:
-                        likeness_score = temp_score
-                        index = key_out
-             if len(value) > len(value_out):
-                 output[key] = value 
-                 del output[index]
-                 deprecated_clusters[index] = value_out
-                 print("cluster " + str(index) + " was merged into cluster " + str(key) + " at frame " + str(frame_number))
-                 add_cluster_change(frame_number,(index,key,"m"))
-             else:
-                 print("cluster " + str(key) + " was merged into cluster " + str(index) + " at frame " + str(frame_number))   
-                 add_cluster_change(frame_number,(key,index,"m"))
-                 deprecated_clusters[key] = value
-        else:
+    if len(clustersold) > len(clustersnew):
+        mergelist = {}
+        for key,value in clustersold.items():
+            likeness_score=index=0
             for idx, clusternew in enumerate(clustersnew):
                 temp_score = len(value.intersection(clusternew))/max(len(value),len(clusternew)) 
                 if temp_score > likeness_score:
                     likeness_score = temp_score
                     index = idx
-    
+            if index in mergelist:
+                if mergelist[index][0] > len(value):
+                    print("cluster " + str(key) + " was merged into cluster " + str(mergelist[index][1]) + " at frame " + str(frame_number) + "  1")   
+                    add_cluster_change(frame_number,(key,mergelist[index][1],"m"))
+                    deprecated_clusters[key] = value
+                else:
+                    deprecated_clusters[mergelist[index][1]] = output[mergelist[index][1]]
+                    print("cluster " + str(mergelist[index][1]) + " was merged into cluster " + str(key) + " at frame " + str(frame_number) + "  2")
+                    add_cluster_change(frame_number,(mergelist[index][1],key,"m"))  
+                    output[key] = value
+               
+
+
+            else:
+                mergelist[index] = (len(value),key)
+                output[key] = value
+
+        return output,clusternumber,deprecated_clusters
+    else:
+        for key,value in clustersold.items():
+            likeness_score=index=0
+           # if not clustersnew:
+                 # If there are still old clusters, but no more new, check which two clusters have merged by comparing each cluster.
+            #     for key_out,value_out in output.items():
+            #         temp_score = len(value.intersection(value_out))/max(len(value),len(value_out)) 
+            #         if temp_score > likeness_score:
+            #                likeness_score = temp_score
+            #                index = key_out
+            #     if len(value) > len(value_out):
+            #         output[key] = value 
+            #         del output[index]
+            #         deprecated_clusters[index] = value_out
+            #         print("cluster " + str(index) + " was merged into cluster " + str(key) + " at frame " + str(frame_number))
+            #         add_cluster_change(frame_number,(index,key,"m"))
+            #     else:
+            #         print("cluster " + str(key) + " was merged into cluster " + str(index) + " at frame " + str(frame_number))   
+            #         add_cluster_change(frame_number,(key,index,"m"))
+             #        deprecated_clusters[key] = value
+            #else:
+            for idx, clusternew in enumerate(clustersnew):
+                temp_score = len(value.intersection(clusternew))/max(len(value),len(clusternew)) 
+                if temp_score > likeness_score:
+                    likeness_score = temp_score
+                    index = idx
+
             clustersnew.rotate(-index)
             output[key] = clustersnew.popleft()
-    while clustersnew:
-        likeness_score=index=0
-        for key,value in clustersold.items():
-            temp_score = len(value.intersection(clusternew))/max(len(value),len(clusternew)) 
-            if temp_score > likeness_score:
-                likeness_score = temp_score
-                index = key
-        likeness_score = 0
-        remerge = False
-        for key, value in deprecated_clusters.items():
-            
-            temp_score = len(value.intersection(clusternew))/max(len(value),len(clusternew)) 
-            if (temp_score > identity_threshold) and (temp_score > likeness_score) :
-                likeness_score = temp_score
-                index_old = key
-                remerge = True
-            
-        if remerge:
-            output[index_old] = clustersnew.popleft()
-            print ("cluster " + str(index_old) + " was recreated from cluster " + str(index) + " at frame " + str(frame_number))
-            add_cluster_change(frame_number,(index_old,index,"rc"))
-        else:
-            newkey = clusternumber + 1
-            clusternumber = newkey
-            output[newkey ] = clustersnew.popleft()
-            print ("cluster " + str(newkey) + " was created from cluster " + str(index) + " at frame " + str(frame_number))
-            add_cluster_change(frame_number,(newkey,index,"c"))
-    return output,clusternumber,deprecated_clusters
+        while clustersnew:
+            likeness_score=index=0
+            for key,value in clustersold.items():
+                temp_score = len(value.intersection(clusternew))/max(len(value),len(clusternew)) 
+                if temp_score > likeness_score:
+                    likeness_score = temp_score
+                    index = key
+            likeness_score = 0
+            remerge = False
+            for key, value in deprecated_clusters.items():
+                
+                temp_score = len(value.intersection(clusternew))/max(len(value),len(clusternew)) 
+                if (temp_score > identity_threshold) and (temp_score > likeness_score) :
+                    likeness_score = temp_score
+                    index_old = key
+                    remerge = True
+                
+            if remerge:
+                output[index_old] = clustersnew.popleft()
+                print ("cluster " + str(index_old) + " was recreated from cluster " + str(index) + " at frame " + str(frame_number))
+                add_cluster_change(frame_number,(index_old,index,"rc"))
+                del deprecated_clusters[index_old]
+            else:
+                newkey = clusternumber + 1
+                clusternumber = newkey
+                output[newkey ] = clustersnew.popleft()
+                print ("cluster " + str(newkey) + " was created from cluster " + str(index) + " at frame " + str(frame_number))
+                add_cluster_change(frame_number,(newkey,index,"c"))
+        return output,clusternumber,deprecated_clusters
 
     
                 
@@ -149,17 +179,17 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
                 
             
             
-if  compare_clusters(olddict1,frame21,deprecated_dict,8,1)== test1 :
-    print(" test1 ok :)")
+#if  compare_clusters(olddict1,frame21,deprecated_dict,8,1)== test1 :
+#    print(" test1 ok :)")
 
-if  compare_clusters(olddict2,frame22,{0 : set()},8,1)== test2 :
-    print(" test1 ok :)")
+#if  compare_clusters(olddict2,frame22,{0 : set()},8,1)== test2 :
+#    print(" test1 ok :)")
     
-if  compare_clusters(olddict3,frame23,{0 : set()},8,1) == test3:
-    print("test3 ok :)")
+# if  compare_clusters(olddict3,frame23,{0 : set()},8,1) == test3:
+#    print("test3 ok :)")
         
 
-data = np.load('/coarse/bart/projects/clustering/test_files/4_transfection/clusters.npy')
+data = np.load('clusters.npy')
 
 # single frame set creation for all sets
 #for frame in data:
