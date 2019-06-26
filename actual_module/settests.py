@@ -9,7 +9,7 @@ from collections import deque
 import numpy as np
 import matplotlib.pyplot as plt
 
-identity_threshold = 0.5
+identity_threshold = 0.0000001
 cluster_mutations = {}
 
 cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'}
@@ -104,14 +104,13 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
                 else:
                     deprecated_clusters[mergelist[index][1]] = output[mergelist[index][1]]
                     print("cluster " + str(mergelist[index][1]) + " was merged into cluster " + str(key) + " at frame " + str(frame_number) + "  2")
-                    add_cluster_change(frame_number,(mergelist[index][1],key,"m"))  
-                    output[key] = value
+                    add_cluster_change(frame_number,(mergelist[index][1],key,"m"))
                
 
 
             else:
                 mergelist[index] = (len(value),key)
-                output[key] = value
+                output[key] = clustersnew[index]
 
         return output,clusternumber,deprecated_clusters
     else:
@@ -152,6 +151,9 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
                     index = key
             likeness_score = 0
             remerge = False
+            if len(clusternew) > len(output[index]):
+                clusternew, output[index] = output[index],
+
             for key, value in deprecated_clusters.items():
                 
                 temp_score = len(value.intersection(clusternew))/max(len(value),len(clusternew)) 
