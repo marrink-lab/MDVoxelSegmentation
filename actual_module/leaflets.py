@@ -339,7 +339,7 @@ def main():
 
     # some basic plotting
     if plotting:
-        plot_clusters(data, clusters, skip, reduce_points, min_size = 15,
+        plot_clusters(data, clusters, skip, reduce_points, min_size = 150,
                       start_frame = start_frame, stop_frame = stop_frame)
     return clusters
 
