@@ -176,8 +176,7 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
         return output,clusternumber,deprecated_clusters
 
     
-                
-                  
+                    
                 
             
             
@@ -218,6 +217,26 @@ def sort_clusters(data):
         plotinfo[idx] = plotvariables
     return data,plotinfo
 data, plotinfo = sort_clusters(data)
+
+
+
+     
+
+plt.show()
+temp =list(plotinfo.values())
+
+output =[]
+for idx, i in enumerate(temp):
+    listing = []
+    for j in i:
+        if j[1] > 200:
+            plt.plot(j[0],idx, 'bo')
+        
+    output.append(listing)     
+
+
+
+
 
 np.save('clusters_ordered', data)
 np.save('Visualization_data',plotinfo)
