@@ -30,7 +30,7 @@ def plot_voxels(array):
     plt.show()
     
 def plot_clusters(universe, clusters, skip = 100, reduce_points = 1, 
-                  min_size = 0):
+                  min_size = 0, start_frame = 0, stop_frame = None):
     """
     Makes a scatter plot for each cluster in each frame. The colour of the
     cluster is dependent on the integer of the cluster. Makes a 'figs' folder 
@@ -44,9 +44,11 @@ def plot_clusters(universe, clusters, skip = 100, reduce_points = 1,
     except FileExistsError:
         pass
     print('Some basic plotting...')
-    for frame_idx, _ in enumerate(universe.trajectory[::skip]):
+    if stop_frame == None:
+        stop_frame = len(universe.trajectory)
+    for frame_idx, _ in enumerate(universe.trajectory[start_frame:stop_frame:skip]):
         cluster_sizes = [(x,list(clusters[frame_idx]).count(x)) for x in set(clusters[frame_idx])]
-        amount_clusters = len([ y for x, y in cluster_sizes if y > min_size ])-1
+        amount_clusters = len([ y for x, y in cluster_sizes if y >= min_size ])-1
         
         frame = universe.trajectory.frame
         fig = plt.figure(figsize = [10, 10])
@@ -247,7 +249,7 @@ def mf_leaflet_clustering(universe, lipids_selection,
                           tails_selection, headgroups_selection = False, 
                           exclusions_selection = False, 
                           resolution = 1, skip = 1, bits = 'uint32',
-                          verbose = False,
+                          verbose = False, start_frame = 0, stop_frame = None
                           ):
     """
     MultiFrame Leaflet Clustering
@@ -260,16 +262,17 @@ def mf_leaflet_clustering(universe, lipids_selection,
     """
     start = time.time()
     clusters = []
+    if stop_frame == None:
+        stop_frame = len(universe.trajectory)
     # iterating over each frame in trajectory using skip
-    for _ in universe.trajectory[::skip]:
+    for time_counter, _ in enumerate(universe.trajectory[start_frame:stop_frame:skip]):
         # LOADING BAR
-        time_total = ((((time.time()-start)/(universe.trajectory.frame+1))*len(universe.trajectory)+1))/60
+        time_total = ((((time.time()-start)/(time_counter+1))*len(universe.trajectory[start_frame:stop_frame:skip])+1))/60
         time_working = (time.time()-start)/60
         message = 'Frame {}/{}. Leaflet clustering will take {:.01f} more minutes.\r'
         print(message.format(universe.trajectory.frame,
-                             len(universe.trajectory)-1,
-                             time_total-time_working,
-                             ),
+                             stop_frame-1,
+                             time_total-time_working,), 
                              end = '')
         sys.stdout.flush()
         
@@ -282,7 +285,7 @@ def mf_leaflet_clustering(universe, lipids_selection,
         clusters.append(universe_mask)  
     # this print is needed to get out of the same line as the loading bar of 
     #  the single frame leaflet clustering.    
-    print()
+    print() # adds a newline to get out of the loading bar line.
     clusters = np.array(clusters, dtype = bits)
 
     return clusters
@@ -317,6 +320,9 @@ def main():
     resolution = inp.resolution
     reduce_points = inp.reduce_points
     verbose = inp.verbose
+    start_frame = inp.start_frame
+    stop_frame = inp.stop_frame
+    #print('start {} stop {}'.format(start_frame, stop_frame))
     bits = 'uint32'
     
     # staring the clustering
@@ -324,14 +330,17 @@ def main():
     start = time.time()
     clusters = mf_leaflet_clustering(data, lipids_selection, tails_selection, 
                                      headgroups_selection, exclusions_selection, 
-                                     resolution, skip, bits, verbose = verbose)
+                                     resolution, skip, bits, verbose = verbose, 
+                                     start_frame = start_frame, 
+                                     stop_frame = stop_frame)
     print('Clustering took: {}'.format(time.time()-start))
     #! writing the output at once this should become a per frame write/append!
     np.save(output_file, clusters.astype(bits))                                 
 
     # some basic plotting
     if plotting:
-        plot_clusters(data, clusters, skip, reduce_points, min_size = 15)
+        plot_clusters(data, clusters, skip, reduce_points, min_size = 15,
+                      start_frame = start_frame, stop_frame = stop_frame)
     return clusters
 
 if __name__ == '__main__':
