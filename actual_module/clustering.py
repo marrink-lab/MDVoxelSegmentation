@@ -8,11 +8,15 @@ import copy
 import time
 import itertools
 
-def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic'):
+def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic', 
+                        max_offset = 0.05):
     """
     Takes an atomgroup and bins it as close to the resolution as possible.
     PBC is 'cubic' by default, but can be turned off. No other form of 
-    PBC is currently supported.
+    PBC is currently supported. If the offset of the actual resolution in
+    at least one dimension is more than by default 5%, the function will stop
+    and return an error specifying the actual offset in all dimensions plus
+    the frame in which the mapping error occured.
     
     Returns
     (array) 3d boolean with True for occupied bins
@@ -31,8 +35,12 @@ def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic'):
     # scaling the matrix to the binning
     scaling = mod_dimensions[0]/(dimensions/resolution)
     max_error = np.max(np.absolute(scaling-1))
-    if max_error > 0.05:
-        raise ValueError('A scaling artifact has occured of more than 5%, {}% deviation from the target resolution in frame {} was detected. You could consider increasing the resolution.'.format(np.abs(scaling-1)*100, atomgroup.universe.trajectory.frame))
+    if max_error > max_offset:
+        raise ValueError("A scaling artifact has occured of more than 5%, {}% \
+deviation from the target resolution in frame {} was \
+detected. You could consider increasing the \
+resolution.".format(np.abs(scaling-1)*100, 
+                    atomgroup.universe.trajectory.frame))
     scaled_positions = ((positions * scaling) / resolution).astype(int)
   
     # fixing cubic PBC
@@ -44,15 +52,56 @@ def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic'):
     
     # filling the explicit_matrix
     scaled_positions = scaled_positions.astype('int')
-    explicit_matrix[scaled_positions[:,0], scaled_positions[:,1], scaled_positions[:,2]] = 1
+    explicit_matrix[scaled_positions[:,0], scaled_positions[:,1], 
+                    scaled_positions[:,2]] = 1
     
     # generating the mapping dictionary
     voxel2atom = collections.defaultdict(list)
-    for atom_index, scaled_position in enumerate(scaled_positions):
+    #TODO This might be causing the resid clustering shift bug.
+    # atom index starts from 0 here and is the index in the array, not the
+    #  selection atom index in atom_select (these start from 1)
+    for idx, scaled_position in enumerate(scaled_positions):
         x, y, z = scaled_position
-        voxel2atom['x{}y{}z{}'.format(x, y, z)].append(atom_index)
+        voxel2atom['x{}y{}z{}'.format(x, y, z)].append(
+                atomgroup.atoms[idx].ix)
     
     return explicit_matrix.astype(bool), voxel2atom
+
+
+def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup):
+    """
+    Converts the voxels in a voxel list back to an atomgroup.
+    
+    Takes a voxel list and uses the voxel2atom mapping with respect to the
+    atomgroup.universe to generate a corresponding atomgroup with the voxel 
+    list. This is the inverse of gen_explicit_matrix.
+    
+    Returns an atomgroup.
+    """
+    indices = [voxel2atom['x{}y{}z{}'.format(voxel[0], voxel[1], voxel[2])] 
+                for voxel in voxel_list]
+    indices = np.concatenate(indices).astype('int')
+    assert np.unique(indices).shape == indices.shape, 'Indices should \
+appear only once.'
+    return atomgroup.universe.atoms[indices]
+
+
+def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup):
+    """
+    Converts the cluster in voxel space to an atomgroup.
+    
+    Clusters is a dictionary with the cluster ids as keys and the voxel_lists
+    as values.
+    
+    Returns a list of atomgroups.
+    """
+    atomgroups = []
+    for cluster in clusters:
+        voxel_list = clusters[cluster]
+        atomgroups.append(convert_voxels2atomgroup(voxel_list, 
+                                                  voxel2atom, atomgroup))
+    return atomgroups
+
 
 def blur_matrix(matrix, span = 0, PBC = 'cubic'):
     """
@@ -61,7 +110,9 @@ def blur_matrix(matrix, span = 0, PBC = 'cubic'):
     an inner smearing useful for generating the inner contour. The opisite is 
     useful for generating the outer smearing for the outer contour. By default
     it assumes cubic periodic boundary conditions. PBC can currently not be 
-    turned off. 
+    turned off.
+    
+    Returns the blurred boolean matrix.
     """
     blurred_matrix = copy.copy(matrix)
     if PBC == 'cubic':
@@ -79,16 +130,22 @@ def blur_matrix(matrix, span = 0, PBC = 'cubic'):
         else:
             for shift in range(span):
                 for current_axis in range(3):
-                    blurred_matrix += np.roll(blurred_matrix, shift+1, current_axis)
-                    blurred_matrix += np.roll(blurred_matrix, -(shift+1), current_axis)
+                    blurred_matrix += np.roll(blurred_matrix, shift+1, 
+                                              current_axis)
+                    blurred_matrix += np.roll(blurred_matrix, -(shift+1), 
+                                              current_axis)
     else:
-        raise ValueError('Blur matrix only supports cubic periodic boundary conditions.')
+        raise ValueError('Blur matrix only supports cubic periodic boundary \
+conditions.')
     return blurred_matrix.astype(bool)
    
 def gen_contour(matrix, span = 1, inv = True):
     """
     Generatates the inner (inv = True), or outer (inv = False) contour of span 
-    around the 3d boolean matrix.
+    around the 3d boolean matrix. Taking into account the first voxel
+    neighbours within span range.
+    
+    Returns the contour boolean matrix.
     """
     if inv:
         blurred_matrix = blur_matrix(np.logical_not(matrix), span)
@@ -117,12 +174,17 @@ def find_neighbours(position, dimensions, span = 1):
     
 # The 3d example of a very clear more set oriented neighbour clustering
 #@profile
-def set_clustering(explicit_matrix, exclusion_mask = False, span = 1, verbose = False):
+def set_clustering(explicit_matrix, exclusion_mask = False, span = 1, 
+                   verbose = False):
     """
-    The 3d example of a very clear more set oriented neighbour voxel clustering.
-    Generation of the set is relatively slow and could maybe be further optimized.
+    A set oriented neighbour voxel clustering.
     
-    Input should be a 3d boolean array.
+    The explicit matrix should be a 3d boolean array. The exclusion mask has
+    to have the same dimensions as the explicit matrix and should also be 
+    a boolean array. The exclusion mask acts as a dead zone for clustering. 
+    The span is used to expand clustering to the first N neighbours
+    in voxel space. Verbose can be used for more information during the 
+    clustering.
     
     Returns a dictionary of clusters with a list of voxels per cluster.    
     """
@@ -147,10 +209,12 @@ def set_clustering(explicit_matrix, exclusion_mask = False, span = 1, verbose = 
     if verbose:
         print('It took {} to make the set.'.format(stop-start))
 
-    # The clustering scales linear and millions of points can be achieved in the minute range.
+    # The clustering scales linear and millions of points can be achieved in 
+    #  the minute range.
     # beginning the timer for clustering (verbose)
     start = time.time()
-    # the range of the neighbour search (1 is direct neighbour including the diagonal)
+    # the range of the neighbour search (1 is direct neighbour including 
+    #  the diagonal)
     span = 1
     # the starting cluster
     current_cluster = 1
@@ -189,7 +253,8 @@ def set_clustering(explicit_matrix, exclusion_mask = False, span = 1, verbose = 
     stop = time.time()
 
     if verbose:
-        print('It took {} to cluster {} clusters with a total of {} points'.format(stop-start, len(clusters), len(positions)))
+        print('It took {} to cluster {} clusters \
+with a total of {} points'.format(stop-start, len(clusters), len(positions)))
     return clusters
     
 ### Only for testing
@@ -211,20 +276,25 @@ def plot_voxels(array):
 
 
 if __name__=='__main__':
-    data = mda.Universe('/home/bart/projects/clustering/test_files/4_adhesion/attached.gro')
+    data = mda.Universe('/home/bart/projects/clustering/test_files/\
+4_adhesion/attached.gro')
     selection = data.select_atoms('resname DOPE DOTAP')
     start = time.time()
-    test_selection = data.select_atoms('(name PO4 NC3 NH3 CNO) and around 8 (name C1A C1B C2A C2B C3A C3B C4A C4B D1A D1B D2A DB D3A D3B D4A D4B)')
+    test_selection = data.select_atoms('(name PO4 NC3 NH3 CNO) and around 8 \
+(name C1A C1B C2A C2B C3A C3B C4A C4B D1A D1B D2A DB D3A D3B D4A D4B)')
     print('The search query took {}'.format(time.time()-start))
     resolution = 1
 
     start = time.time()
-    explicit_matrix, voxel2atom = gen_explicit_matrix(selection, resolution = resolution)
+    explicit_matrix, voxel2atom = gen_explicit_matrix(selection, 
+                                                      resolution = resolution)
     contour_matrix = gen_contour(explicit_matrix, 1, True)
     outer_contour_matrix = gen_contour(explicit_matrix, 1, False)
-    print('Making the contour took {}.\nGenerating output figures...'.format(time.time()-start))
+    print('Making the contour took {}.\nGenerating output '
+          'figures...'.format(time.time()-start))
     print('\nCLUSTERING 3, list based cubic boundary fix')
-    clusters = set_clustering(contour_matrix, exclusion_mask = False, span = 1, verbose = True)
+    clusters = set_clustering(contour_matrix, exclusion_mask = False, 
+                              span = 1, verbose = True)
     plot_voxels(explicit_matrix)
     plot_voxels(contour_matrix)
     plot_voxels(outer_contour_matrix)

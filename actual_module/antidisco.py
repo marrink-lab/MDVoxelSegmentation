@@ -50,7 +50,7 @@ def plot_clusters(universe, clusters, skip, reduce_points, colors, start_frame =
             if cluster == 0:
                 continue
             ax.scatter(universe.atoms.positions[clusters[frame_idx] == cluster][:,0][::reduce_points], universe.atoms.positions[clusters[frame_idx] == cluster][:,1][::reduce_points], universe.atoms.positions[clusters[frame_idx] == cluster][:,2][::reduce_points], alpha = 0.5, color = colors[(cluster-1)%len(colors)])
-        plt.show()
+        #plt.show()
         fig.savefig('figs_sorted/leaflets_frame-{:09d}.png'.format(universe.trajectory.frame), dpi = 300)
         plt.close()
   
