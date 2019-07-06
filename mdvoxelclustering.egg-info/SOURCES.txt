@@ -29,4 +29,5 @@ mdvoxelclustering.egg-info/not-zip-safe
 mdvoxelclustering.egg-info/requires.txt
 mdvoxelclustering.egg-info/top_level.txt
 tests/__init__.py
-tests/test_mdvoxelclustering.py
+tests/test_clustering.gro
+tests/test_clustering.py
