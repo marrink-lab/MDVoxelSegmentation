@@ -28,11 +28,11 @@ Features
 * Compatible with most MD file formats due to its tight link to MDAnalysis
 * Consistent clustering over time
 * Membrane leaflet recognition of lipids of most topologies
-    * Bilayers
-    * Vesicles
-    * Inverted hexagonal phase
-    * Membrane thethers
-    * Complex lipids formulations including cholesterol
+    - Bilayers
+    - Vesicles
+    - Inverted hexagonal phase
+    - Membrane thethers
+    - Complex lipids formulations including cholesterol
 
 
 Credits
