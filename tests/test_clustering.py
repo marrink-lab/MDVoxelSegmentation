@@ -17,7 +17,7 @@ def test_forward_and_backward():
     """
     Testing forward and backward mapping.
     """
-    universe = mda.Universe('test.gro')
+    universe = mda.Universe('test_clustering.gro')
     lipids = universe.select_atoms('resname DLPC')
     forward_atoms = lipids.atoms 
     density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution = 1, 
@@ -32,7 +32,7 @@ def test_clustering_and_backward_no_exclusions():
     """
     Testing clustering and backward mapping (no eclusions).
     """
-    universe = mda.Universe('test.gro')
+    universe = mda.Universe('test_clustering.gro')
     lipids = universe.select_atoms('resname DLPC')
     
     density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution = 1, 
@@ -53,7 +53,7 @@ def test_clustering_and_backward_exclusions():
     """
     Testing clustering and backward mapping (eclusions).
     """
-    universe = mda.Universe('test.gro')
+    universe = mda.Universe('test_clustering.gro')
     lipids = universe.select_atoms('resname DLPC')
     exclusions = universe.select_atoms('name PO4')
     density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution = 1, 
