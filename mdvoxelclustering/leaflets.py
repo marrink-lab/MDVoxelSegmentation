@@ -131,7 +131,7 @@ def volume_clustering(
 
 
 def leaflet_clustering(
-        tails_selection, headgroups_selection,
+        selection_tails_atomgroup, selection_headgroups_atomgroup,
         exclusions_selection = False,
         resolution=1, bits='uint32', verbose=False,
         ):
@@ -146,7 +146,7 @@ def leaflet_clustering(
     # Generating the explicit matix of all headgroups for masking the 
     #  lipid tail densities.
     headgroups_mask, headgroups_mapping = clus.gen_explicit_matrix(
-            headgroups_selection, resolution)
+            selection_headgroups_atomgroup, resolution)
     
     ### Creating the exclusion mask for clustering around the proteins
     #   this will be use to set the protein (flanking) pixels to touched
@@ -157,7 +157,7 @@ def leaflet_clustering(
                 exclusions_selection, resolution)[0]
         # Protein contour (O) mask.
         outward_contour_exclusions = clus.gen_contour(
-                explicit_matrix_exclusions, span = 1, inv = False
+                explicit_matrix_exclusions, span=1, inv=False
                 )
         # Protein volume+contour(O) mask.
         exclusion_mask = np.logical_or(explicit_matrix_exclusions,
@@ -168,42 +168,50 @@ def leaflet_clustering(
     # Clustering the tail density for tail grouping excluding the
     #  tail densities which are masked by headgroups.
     tails_clusters, tails_mapping, tails_mask = volume_clustering(
-            tails_selection, headgroups_mask,
-            exclusion_mask = False, resolution = resolution
+            selection_tails_atomgroup, headgroups_mask,
+            exclusion_mask=False, resolution=resolution
             )
     if verbose:
         print('Plotting the headgroup masked lipid tail mask.')
         plot_voxels(tails_mask)
     # Making the tail explicit matrix without the masking of headgroups.
-    all_tails_mask = clus.gen_explicit_matrix(tails_selection, resolution)[0]
+    all_tails_mask = clus.gen_explicit_matrix(selection_tails_atomgroup, 
+                                              resolution)[0]
     if verbose:
         print('Currently plotting the unmasked lipid tail mask.')
         plot_voxels(all_tails_mask)
 
     # Converting the voxel mask to selection atom indices.
-    tails_atomgroup_masks = clus.convert_clusters2atomgroups(tails_clusters,
-                                                             tails_mapping,
-                                                             tails_selection)
+    tails_atomgroups = clus.convert_clusters2atomgroups(
+            tails_clusters,
+            tails_mapping,
+            selection_tails_atomgroup
+            )
     # Using the atom indices to obtain residues in selection.
-    tails_residuegroup_masks = [
-            tails_atomgroup_mask.residues
-            for tails_atomgroup_mask in tails_atomgroup_masks
+    tails_residuegroups = [
+            tails_atomgroup.residues
+            for tails_atomgroup in tails_atomgroups
             ]
    
     # Clustering the lipid contours per tail density group.
     list_leaflet_resid_groups = []
-    for tails_residuegroup_mask in tails_residuegroup_masks:
+    for tails_residuegroup in tails_residuegroups:
         #TODO This is curerntly being tested to fix the indexing bug.
-        current_selection = tails_residuegroup_mask.atoms
-        # Generating the explicit matrix for the full lipids.
+        # Generating the explicit matrix for the headgroups in current tails.
+        local_headgroups_atomgroup = (tails_residuegroup.atoms &
+                                      selection_headgroups_atomgroup)
         headgroups_mask, headgroups_mapping = clus.gen_explicit_matrix(
-                current_selection, resolution)
+                local_headgroups_atomgroup, resolution)
+        
         if verbose:
             print('Currently plotting the headgroups mask.')
             plot_voxels(headgroups_mask)
+        
         # Using the unmasked tail densities to exclude headgroup locations.
-        #  This will result in not clustering all headgroups.
-        headgroups_mask[all_tails_mask] = False
+        #  This will result in not clustering all headgroups. Only covering 
+        #  tails in the current selection are used as exclusion mask.
+        headgroups_mask[all_tails_mask &
+                         headgroups_mask] = False
         # Clustering the masked headgroup densities.
         headgroups_clusters = clus.set_clustering(headgroups_mask,
                                                   exclusion_mask)
@@ -221,22 +229,22 @@ def leaflet_clustering(
         
         # Converting the voxel mask to selection atom indices with respect to 
         #  the universe.atoms.
-        leaflets_atomgroup_masks = clus.convert_clusters2atomgroups(
+        leaflets_atomgroups = clus.convert_clusters2atomgroups(
                 headgroups_clusters,
                 headgroups_mapping,
-                current_selection
+                local_headgroups_atomgroup
                 )
         # Converting the atom indices in selection to residues in selection.
-        leaflets_residuegroup_masks = [
-                leaflets_atomgroup_mask.residues
-                for leaflets_atomgroup_mask in leaflets_atomgroup_masks
+        leaflets_residuegroups = [
+                leaflets_atomgroup.residues
+                for leaflets_atomgroup in leaflets_atomgroups
                 ]
         # Adding the current resid groups to the list.
-        list_leaflet_resid_groups += list(leaflets_residuegroup_masks)
+        list_leaflet_resid_groups += list(leaflets_residuegroups)
     print()
     
     # Writing the lipid_contour_resid_groups per cluster, skipping 0.
-    out_array = np.zeros((len(headgroups_selection.universe.atoms)),
+    out_array = np.zeros((len(selection_headgroups_atomgroup.universe.atoms)),
                          dtype = bits)
     for cluster, lipid_contour_resid_group in enumerate(
             list_leaflet_resid_groups):

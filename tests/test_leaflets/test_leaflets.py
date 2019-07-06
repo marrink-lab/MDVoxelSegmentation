@@ -6,9 +6,12 @@ Created on Sat Jul  6 14:35:52 2019
 @author: bart
 """
 import itertools
+import os
+from shutil import copyfile
 import numpy as np
 import MDAnalysis as mda
 from mdvoxelclustering import leaflets
+
 
 
 def test_contour_clustering_bilayer():
@@ -46,8 +49,8 @@ def test_volume_clustering_bilayer():
                             'tests/test_leaflets/test_bilayer.gro')
     lipids = universe.select_atoms('resname DOPC')
     output = leaflets.volume_clustering(
-            lipids, headgroups_selection = False,
-            exclusion_mask = False, resolution = 1
+            lipids, headgroups_selection=False,
+            exclusion_mask=False, resolution=1
             )
     clusters = output[0]
     
@@ -60,6 +63,9 @@ def test_leaflet_clustering():
     """
     Testing the leaflet clustering on a single bilayer of only DOPC.
     """
+    # removing possible existing cluster.npy file
+    os.remove("tests/test_leaflets/clusters.npy") 
+    
     universe = mda.Universe('tests/test_leaflets/test_bilayer.tpr', 
                             'tests/test_leaflets/test_bilayer.gro')
     #universe = mda.Universe('test_bilayer.tpr', 
@@ -78,9 +84,33 @@ def test_leaflet_clustering():
     clusters = leaflets.leaflet_clustering(
         tails_selection, headgroups_selection,
         exclusions_selection = False, 
-        resolution = 1, bits = 'uint32', verbose = False,
+        resolution=1, bits='uint32', verbose=False,
         )
+    np.save('tests/test_leaflets/clusters.npy', clusters)
     
     assert np.all(clusters == ref_leaflets)
     
     
+def test_vmd_visualization_single_frame():
+    """
+    A small script to generate a vmd visualization to check the clustering
+    manually for the DOPC only bilayer.
+    """
+    alphabet = 'abcdefghijklmnopqrstuvwxyz'.upper()
+    clusters = np.load('tests/test_leaflets/clusters.npy')
+    
+    copyfile("tests/test_leaflets/bilayer.vmd",
+             "tests/test_leaflets/bilayer_clustered.vmd")
+    with open('tests/test_leaflets/bilayer_clustered.vmd', 'a') as f:
+        for cluster in np.unique(clusters):
+            f.write('\n\nset cluster{} [atomselect top "index '.format(cluster))
+            atom_indices = np.asarray(np.where(clusters == cluster))[0]
+            for idx, element in enumerate(atom_indices):
+                if idx % 10 == 0:
+                    f.write('\\\n')
+                f.write('{} '.format(element))
+            f.write('"]\n\n')
+            f.write('$cluster{0} set chain {1}'.format(cluster, 
+                                                       alphabet[cluster-1]))
+
+
