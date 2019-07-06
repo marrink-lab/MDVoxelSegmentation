@@ -17,7 +17,7 @@ Using neighbour clustering in voxelspace for fast and consistant spatial and tem
 
 This software has been developed to allow for a higher selection syntax than atom and or residue index. MDVoxelClustering combines nieghbour clustering with a voxel mask of set resolution (default 1 nm). For now the software has mainly been tested on CG Martini lipid assemblies with or without embedded proteins, though it probably works even better on atomistic simulations due to the higher amount of atoms that can be binned.
 
-* Free software: ISC license
+* Open software: Apache 2 license
 * Documentation: https://mdvoxelclustering.readthedocs.org.
 
 Features
