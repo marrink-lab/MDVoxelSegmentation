@@ -36,10 +36,10 @@ def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic',
     scaling = mod_dimensions[0]/(dimensions/resolution)
     max_error = np.max(np.absolute(scaling-1))
     if max_error > max_offset:
-        raise ValueError("A scaling artifact has occured of more than 5%, {}% \
-deviation from the target resolution in frame {} was \
-detected. You could consider increasing the \
-resolution.".format(np.abs(scaling-1)*100, 
+        raise ValueError("A scaling artifact has occured of more than 5%, {}% "
+                         "deviation from the target resolution in frame {} was "
+                         "detected. You could consider increasing the "
+                         "resolution.".format(np.abs(scaling-1)*100, 
                     atomgroup.universe.trajectory.frame))
     scaled_positions = ((positions * scaling) / resolution).astype(int)
   

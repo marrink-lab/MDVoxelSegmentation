@@ -7,10 +7,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import os
 import time
 import sys
-import pmda.custom
-
-#multiprocess
-#import pmda.custom
 
 
 ### Only for testing
