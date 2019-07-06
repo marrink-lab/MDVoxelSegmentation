@@ -149,10 +149,10 @@ def gen_contour(matrix, span = 1, inv = True):
     """
     if inv:
         blurred_matrix = blur_matrix(np.logical_not(matrix), span)
-        return blurred_matrix ^ np.logical_not(matrix)
+        return blurred_matrix.astype(bool) ^ np.logical_not(matrix)
     if not inv:
         blurred_matrix = blur_matrix(matrix, span)
-        return blurred_matrix ^ matrix
+        return blurred_matrix.astype(bool) ^ matrix
 
 def find_neighbours(position, dimensions, span = 1):
     """

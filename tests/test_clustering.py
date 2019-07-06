@@ -20,9 +20,11 @@ def test_forward_and_backward():
     universe = mda.Universe('test_clustering.gro')
     lipids = universe.select_atoms('resname DLPC')
     forward_atoms = lipids.atoms 
-    density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution = 1, 
-                                                        PBC = 'cubic')
+    
+    density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution=1, 
+                                                        PBC='cubic')
     voxel_list = np.asarray(np.where(density_mask == True)).T
+    
     backward_atoms = clus.convert_voxels2atomgroup(voxel_list, voxel2atom, lipids)
     
     assert np.all(forward_atoms.ix == backward_atoms.ix)
@@ -35,13 +37,14 @@ def test_clustering_and_backward_no_exclusions():
     universe = mda.Universe('test_clustering.gro')
     lipids = universe.select_atoms('resname DLPC')
     
-    density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution = 1, 
-                                                        PBC = 'cubic')
+    density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution=1, 
+                                                        PBC='cubic')
     clusters = clus.set_clustering(density_mask)
     cluster_atomgroups = clus.convert_clusters2atomgroups(clusters, voxel2atom, 
                                                           lipids)
-    cluster0_ref = set([17,18,19])
-    cluster1_ref = set([5,6,7,8,9,10,11,12])
+    
+    cluster0_ref = set([17, 18, 19])
+    cluster1_ref = set([5, 6, 7, 8, 9, 10, 11, 12])
     cluster0 = set(cluster_atomgroups[0].ix)
     cluster1 = set(cluster_atomgroups[1].ix)
     
@@ -56,18 +59,18 @@ def test_clustering_and_backward_exclusions():
     universe = mda.Universe('test_clustering.gro')
     lipids = universe.select_atoms('resname DLPC')
     exclusions = universe.select_atoms('name PO4')
-    density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution = 1, 
-                                                        PBC = 'cubic')
+    density_mask, voxel2atom = clus.gen_explicit_matrix(lipids, resolution=1, 
+                                                        PBC='cubic')
     density_mask_exclusions, _ = clus.gen_explicit_matrix(exclusions, 
-                                                          resolution = 1, 
-                                                          PBC = 'cubic')
+                                                          resolution=1, 
+                                                          PBC='cubic')
     clusters = clus.set_clustering(density_mask, density_mask_exclusions)
     cluster_atomgroups = clus.convert_clusters2atomgroups(clusters, voxel2atom, 
                                                           lipids)
     
-    cluster0_ref = set([17,18,19])
+    cluster0_ref = set([17, 18, 19])
     cluster1_ref = set([12])
-    cluster2_ref = set([5,6,7,8,9,10])
+    cluster2_ref = set([5, 6, 7, 8, 9, 10])
     cluster0 = set(cluster_atomgroups[0].ix)
     cluster1 = set(cluster_atomgroups[1].ix)
     cluster2 = set(cluster_atomgroups[2].ix)
@@ -88,12 +91,13 @@ def test_matrix_blurring_span0():
     ref_matrix[12:15] = True
     ref_matrix[16] = True
     ref_matrix[22] = True
-    ref_matrix = ref_matrix.reshape([3,3,3])
+    ref_matrix = ref_matrix.reshape([3, 3, 3])
     
     test_matrix = np.zeros(27)
     test_matrix[13] = True
-    test_matrix = test_matrix.reshape([3,3,3])
-    blurred_matrix = clus.blur_matrix(test_matrix, span = 0, PBC = 'cubic')
+    test_matrix = test_matrix.reshape([3, 3, 3])
+    
+    blurred_matrix = clus.blur_matrix(test_matrix, span=0, PBC='cubic')
     
     assert np.all(blurred_matrix == ref_matrix)
 
@@ -108,12 +112,13 @@ def test_matrix_blurring_span_negative_one():
     ref_matrix[14] = True
     ref_matrix[16] = True
     ref_matrix[22] = True
-    ref_matrix = ref_matrix.reshape([3,3,3])
+    ref_matrix = ref_matrix.reshape([3, 3, 3])
     
     test_matrix = np.zeros(27)
     test_matrix[13] = True
-    test_matrix = test_matrix.reshape([3,3,3])
-    blurred_matrix = clus.blur_matrix(test_matrix, span = -1, PBC = 'cubic')
+    test_matrix = test_matrix.reshape([3, 3, 3])
+    
+    blurred_matrix = clus.blur_matrix(test_matrix, span=-1, PBC='cubic')
     
     assert np.all(ref_matrix == blurred_matrix)
 
@@ -123,13 +128,14 @@ def test_matrix_blurring_spanN():
     Testing matrix block blurring of span 1. This the general case.
     """
     ref_matrix = np.zeros(125)
-    ref_matrix = ref_matrix.reshape([5,5,5])
+    ref_matrix = ref_matrix.reshape([5, 5, 5])
     ref_matrix[1:4, 1:4, 1:4] = True
     
     test_matrix = np.zeros(125)
     test_matrix[62] = True
-    test_matrix = test_matrix.reshape([5,5,5])
-    blurred_matrix = clus.blur_matrix(test_matrix, span = 1, PBC = 'cubic')
+    test_matrix = test_matrix.reshape([5, 5, 5])
+    
+    blurred_matrix = clus.blur_matrix(test_matrix, span=1, PBC='cubic')
     
     assert np.all(blurred_matrix == ref_matrix)
     
@@ -140,17 +146,73 @@ def test_matrix_blurring_cubicPBC():
     """
     ref_matrix = np.zeros(27)
     ref_matrix = ref_matrix.reshape([3,3,3])
-    ref_matrix[0,0,0] = True
-    ref_matrix[1,0,0] = True
-    ref_matrix[2,0,0] = True
-    ref_matrix[0,1,0] = True
-    ref_matrix[0,2,0] = True
-    ref_matrix[0,0,1] = True
-    ref_matrix[0,0,2] = True
+    ref_matrix[0, 0 ,0] = True
+    ref_matrix[1, 0, 0] = True
+    ref_matrix[2, 0, 0] = True
+    ref_matrix[0, 1, 0] = True
+    ref_matrix[0, 2, 0] = True
+    ref_matrix[0, 0, 1] = True
+    ref_matrix[0, 0, 2] = True
     
     test_matrix = np.zeros(27)
     test_matrix[0] = True
-    test_matrix = test_matrix.reshape([3,3,3])
-    blurred_matrix = clus.blur_matrix(test_matrix, span = 0, PBC = 'cubic')
+    test_matrix = test_matrix.reshape([3, 3, 3])
+    
+    blurred_matrix = clus.blur_matrix(test_matrix, span=0, PBC='cubic')
     
     assert np.all(blurred_matrix == ref_matrix)
+
+
+def test_contour_inv_span1():
+    """
+    Testing the contour voxel mask in gen_contour for the most outer layer 
+    in the selection.
+    """
+    test_matrix = np.zeros(125)
+    test_matrix = test_matrix.reshape([5, 5, 5])
+    test_matrix[1:4, 1:4, 1:4] = True
+
+    ref_matrix = np.copy(test_matrix)
+    ref_matrix[2:3, 2:3, 2:3] = False
+
+    contour_matrix = clus.gen_contour(test_matrix, span=1, inv=True)
+    
+    assert np.all(contour_matrix == ref_matrix)
+    
+
+def test_contour_inv_span2():
+    """
+    Testing the contour voxel mask in gen_contour for the second outer layer 
+    in the selection.
+    """
+    test_matrix = np.zeros(125)
+    test_matrix = test_matrix.reshape([5, 5, 5])
+    test_matrix[1:4, 1:4, 1:4] = True
+
+    ref_matrix = np.copy(test_matrix)
+    ref_matrix[2, 2, 2] = True
+
+    contour_matrix = clus.gen_contour(test_matrix, span=2, inv=True)
+    
+    assert np.all(contour_matrix == ref_matrix)
+
+
+def test_contour_span1():
+    """
+    Testing the contour voxel mask in gen_contour for the most outer layer 
+    in the selection in selecting the first non own voxels.
+    """
+    test_matrix = np.zeros(125)
+    test_matrix = test_matrix.reshape([5, 5, 5])
+    test_matrix[1:4, 1:4, 1:4] = True
+    print(test_matrix)
+
+    ref_matrix = np.copy(test_matrix).astype(bool)
+    ref_matrix[0:5, 0:5, 0:5] = True
+    ref_matrix[1:4, 1:4, 1:4] = False
+    print(ref_matrix)
+    
+    contour_matrix = clus.gen_contour(test_matrix.astype(bool), span=1, inv=False)
+    
+    assert np.all(contour_matrix == ref_matrix)
+
