@@ -8,7 +8,6 @@ import os
 import time
 import sys
 
-
 ### Only for testing
 def plot_voxels(array):
     """
@@ -57,22 +56,23 @@ def plot_clusters(universe, clusters, skip = 100, reduce_points = 1,
                 frame, 
                 frame*universe.trajectory.dt/1000, 
                 amount_clusters))
-        ax = fig.add_subplot(111, projection='3d', aspect='equal')
+        ax = fig.add_subplot(111, projection='3d')
         ax.set_xlim3d(0, universe.dimensions[0])
         ax.set_ylim3d(0, universe.dimensions[1])
         ax.set_zlim3d(0, universe.dimensions[2])
-        #print('Current frame: {}'.format(frame_idx))
+        print('Current frame: {}'.format(frame_idx))
         for cluster, count in cluster_sizes:
             if cluster == 0:
                 continue
             if count < min_size:
                 continue
             #print(len(clusters[frame_idx][clusters[frame_idx] == cluster]))
-            ax.scatter(universe.atoms.positions[
-                    clusters[frame_idx] == cluster][:,0][::reduce_points], 
+            ax.scatter(
+universe.atoms.positions[clusters[frame_idx] == cluster][:,0][::reduce_points], 
 universe.atoms.positions[clusters[frame_idx] == cluster][:,1][::reduce_points], 
 universe.atoms.positions[clusters[frame_idx] == cluster][:,2][::reduce_points], 
-alpha = 0.5)
+alpha = 0.5,
+)
         fig.savefig('figs/leaflets_frame-{:09d}.png'.format(
                 universe.trajectory.frame), dpi = 300)
         plt.close()
@@ -303,6 +303,8 @@ minutes.\r'
     return clusters
 
 
+
+
 def main():
     # Parsing the input file.
     try:
@@ -358,7 +360,6 @@ settings. (An exmaple file should be made here)')
     if plotting:
         plot_clusters(universe, clusters, skip, reduce_points, min_size = 150,
                       start_frame = start_frame, stop_frame = stop_frame)
-    return clusters
 
 
 if __name__ == '__main__':

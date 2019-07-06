@@ -7,6 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import copy
 import time
 import itertools
+from shutil import copyfile
 
 def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic', 
                         max_offset = 0.05):
@@ -257,6 +258,7 @@ def set_clustering(explicit_matrix, exclusion_mask = False, span = 1,
 with a total of {} points'.format(stop-start, len(clusters), len(positions)))
     return clusters
     
+
 ### Only for testing
 def plot_voxels(array):
     """
@@ -273,6 +275,41 @@ def plot_voxels(array):
     edge_color = (1,1,1,0.1)
     ax.voxels(array, edgecolor=edge_color, facecolor= color)
     plt.show()
+
+
+def vmd_visualization_first_frame(template_file, clusters):
+    """
+    A small script to generate a vmd visualization to check the clustering
+    manually.
+    """
+    alphabet = 'abcdefghijklmnopqrstuvwxyz'.upper()
+    
+    target_path = template_file.split('/')[:-1]
+    target_file = template_file.split('/')[-1]
+    
+    
+    target_file = target_file.split('.')
+    target_file = '.'.join(target_file[:-1])
+    target_file += '_clustered.vmd'
+    
+    full_target_path = '/'.join(target_path) + '/' + target_file
+    
+    copyfile(template_file,
+             full_target_path)
+
+    print(np.unique(clusters))
+    with open(full_target_path, 'a') as f:
+        for cluster in np.unique(clusters):
+            f.write('\n\nset cluster{} [atomselect top "index '.format(cluster))
+            atom_indices = np.asarray(np.where(clusters == cluster))[0]
+            print(atom_indices)
+            for idx, element in enumerate(atom_indices):
+                if idx % 10 == 0:
+                    f.write('\\\n')
+                f.write('{} '.format(element))
+            f.write('"]\n\n')
+            f.write('$cluster{0} set chain {1}'.format(cluster, 
+                                                       alphabet[cluster-1]))
 
 
 if __name__=='__main__':
