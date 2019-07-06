@@ -21,7 +21,6 @@ mdvoxelclustering/antidisco.py
 mdvoxelclustering/clustering.py
 mdvoxelclustering/identity.py
 mdvoxelclustering/leaflets.py
-mdvoxelclustering/mdvoxelclustering.py
 mdvoxelclustering/settests.py
 mdvoxelclustering.egg-info/PKG-INFO
 mdvoxelclustering.egg-info/SOURCES.txt
