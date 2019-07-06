@@ -23,16 +23,16 @@ This software has been developed to allow for a higher selection syntax than ato
 Features
 --------
 * This is an alpha build and should be used with extreme care!
-* Voxel based neighbour clustering
+* Voxel based neighbour clustering under cubic periodic boudaries
 * Fast contour clustering
 * Compatible with most MD file formats due to its tight link to MDAnalysis
 * Consistent clustering over time
 * Membrane leaflet recognition of lipids of most topologies
-  - Bilayers
-  - Vesicles
-  - Inverted hexagonal phase
-  - Membrane thethers
-  - Complex lipids formulations including cholesterol
+    * Bilayers
+    * Vesicles
+    * Inverted hexagonal phase
+    * Membrane thethers
+    * Complex lipids formulations including cholesterol
 
 
 Credits
