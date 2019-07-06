@@ -26,13 +26,14 @@ Features
 * Voxel based neighbour clustering under cubic periodic boudaries
 * Fast contour clustering
 * Compatible with most MD file formats due to its tight link to MDAnalysis
-* Consistent clustering over time
+* Consistent clustering over time on trajectories of any size
 * Membrane leaflet recognition of lipids of most topologies
     - Bilayers
     - Vesicles
     - Inverted hexagonal phase
     - Membrane thethers
     - Complex lipids formulations including cholesterol
+    - Up to millions of beads in seconds
 
 
 Credits
