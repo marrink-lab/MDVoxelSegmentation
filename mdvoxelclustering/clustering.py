@@ -7,9 +7,21 @@ from mpl_toolkits.mplot3d import Axes3D
 import copy
 import time
 import itertools
+from shutil import copyfile
+from collections import Counter
+import MDAnalysis.lib.NeighborSearch
 
-def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic', 
-                        max_offset = 0.05):
+
+def Most_Common(lst):
+    """
+    Returns the most common element in a list.
+    """
+    data = Counter(lst)
+    return data.most_common(1)[0][0]
+
+
+def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic', 
+                        max_offset=0.05):
     """
     Takes an atomgroup and bins it as close to the resolution as possible.
     PBC is 'cubic' by default, but can be turned off. No other form of 
@@ -57,7 +69,6 @@ def gen_explicit_matrix(atomgroup, resolution = 1, PBC = 'cubic',
     
     # generating the mapping dictionary
     voxel2atom = collections.defaultdict(list)
-    #TODO This might be causing the resid clustering shift bug.
     # atom index starts from 0 here and is the index in the array, not the
     #  selection atom index in atom_select (these start from 1)
     for idx, scaled_position in enumerate(scaled_positions):
@@ -103,7 +114,7 @@ def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup):
     return atomgroups
 
 
-def blur_matrix(matrix, span = 0, PBC = 'cubic'):
+def blur_matrix(matrix, span=0, PBC='cubic'):
     """
     Blurs a 3d boolean matrix by adding the values which are within span range.
     Default behaviour is using the inverse of the input matrix. This results in 
@@ -139,7 +150,8 @@ def blur_matrix(matrix, span = 0, PBC = 'cubic'):
 conditions.')
     return blurred_matrix.astype(bool)
    
-def gen_contour(matrix, span = 1, inv = True):
+    
+def gen_contour(matrix, span=1, inv=True):
     """
     Generatates the inner (inv = True), or outer (inv = False) contour of span 
     around the 3d boolean matrix. Taking into account the first voxel
@@ -154,7 +166,8 @@ def gen_contour(matrix, span = 1, inv = True):
         blurred_matrix = blur_matrix(matrix, span)
         return blurred_matrix.astype(bool) ^ matrix
 
-def find_neighbours(position, dimensions, span = 1):
+
+def find_neighbours(position, dimensions, span=1):
     """
     Uses the position to generate a a box width size span around the position.
     Taking cubic PBC into account.
@@ -171,11 +184,76 @@ def find_neighbours(position, dimensions, span = 1):
                                neighbour[1]%dimensions[1], 
                                neighbour[2]%dimensions[2])
     return neighbours
+
+
+def non_clustered(universe, clusters, verbose=False):
+    """
+    Displays the residue count for non-clustered components.
     
+    Returns non-clustered atomgroup.
+    """
+    atom_indices = np.asarray(np.where(clusters == 0))[0]
+    non_clustered_atomgroup = universe.atoms[atom_indices]
+    non_clustered_residues_counted = Counter(non_clustered_atomgroup.moltypes)
+    if verbose:
+        message = 'The following residues were not clustered:'
+        print(message, non_clustered_residues_counted)
+    
+    return non_clustered_atomgroup
+
+
+def force_clustering(ref_atomgroup, clusters, non_clustered_atomgroup, 
+                     cutoff=20):
+    """
+    Forces clustering by neighboursearching within cutoff (in place!).
+    
+    Takes a reference selection (headgroups atomgroup for leaflets), clusters 
+    (arr) and a non-clustered atomgroup to cluster all non-clustered atoms to 
+    the most prevalent surrounding cluster around their bead 0.
+    
+    Returns clusters (arr).
+    """
+    non_clustered_residuegroup = non_clustered_atomgroup.residues
+    ref = mda.lib.NeighborSearch.AtomNeighborSearch(ref_atomgroup - 
+                                                    non_clustered_atomgroup, 
+                                                    None)
+
+    # Using the ref to find the residues within 20A of the unclustered 
+    #  residue (headgroup only!!!).
+    neighbouring_cluster_ids = []
+    for residue in non_clustered_residuegroup:
+        hits = ref.search(residue.atoms[0], cutoff, 'A')
+        try:
+            neighbouring_cluster_ids.append([residue.ix, hits.atoms.ix])
+        except AttributeError:
+            continue
+
+    # Map the atom id's to their clusters and use find the most prevalent 
+    #  one excluding cluster 0.
+    closest_cluster_per_residue = []
+    for x in range(len(neighbouring_cluster_ids)):
+        neighbouring_clusters = clusters[neighbouring_cluster_ids[x][1]]
+        neighbouring_clusters = list(filter(lambda a: a != 0, 
+                                            neighbouring_clusters))
+        try:
+            closest_cluster_per_residue.append(
+                    [non_clustered_residuegroup[x], 
+                     Most_Common(neighbouring_clusters)]
+                    )
+        except IndexError:
+            continue
+    # set the cluster 0 residues to the most occuring cluster around their 
+    #  first atom.
+    for residue, cluster in closest_cluster_per_residue:
+        affected_indices = residue.atoms.ix
+        clusters[affected_indices] = cluster
+    return clusters
+
+
 # The 3d example of a very clear more set oriented neighbour clustering
 #@profile
-def set_clustering(explicit_matrix, exclusion_mask = False, span = 1, 
-                   verbose = False):
+def set_clustering(explicit_matrix, exclusion_mask=False, span=1, 
+                   verbose=False):
     """
     A set oriented neighbour voxel clustering.
     
@@ -256,7 +334,8 @@ def set_clustering(explicit_matrix, exclusion_mask = False, span = 1,
         print('It took {} to cluster {} clusters \
 with a total of {} points'.format(stop-start, len(clusters), len(positions)))
     return clusters
-    
+
+
 ### Only for testing
 def plot_voxels(array):
     """
@@ -273,6 +352,49 @@ def plot_voxels(array):
     edge_color = (1,1,1,0.1)
     ax.voxels(array, edgecolor=edge_color, facecolor= color)
     plt.show()
+
+
+def vmd_visualization_single_frame(template_file, clusters):
+    """
+    A small script to generate a vmd visualization to check the clustering
+    manually.
+    """
+    alphabet = 'abcdefghijklmnopqrstuvwxyz'.upper()
+    
+    target_path = template_file.split('/')
+    if len(target_path) > 1:
+        target_path = '/'.join(target_path[:-1])
+    else:
+        target_path = '.'
+            
+    target_file = template_file.split('/')[-1]
+    
+    target_file = target_file.split('.')
+    if len(target_file) > 1:
+        target_file = '.'.join(target_file[:-1])
+    else: 
+        target_file = str(target_file)
+    target_file += '_clustered.vmd'
+    
+    full_target_path = target_path + '/' + target_file
+    print(full_target_path)
+    
+    copyfile(template_file,
+             full_target_path)
+
+    print(np.unique(clusters))
+    with open(full_target_path, 'a') as f:
+        for cluster in np.unique(clusters):
+            f.write('\n\nset cluster{} [atomselect top "index '.format(cluster))
+            atom_indices = np.asarray(np.where(clusters == cluster))[0]
+            print(atom_indices)
+            for idx, element in enumerate(atom_indices):
+                if idx % 10 == 0:
+                    f.write('\\\n')
+                f.write('{} '.format(element))
+            f.write('"]\n\n')
+            f.write('$cluster{0} set chain {1}'.format(cluster, 
+                                                       alphabet[cluster-1]))
 
 
 if __name__=='__main__':

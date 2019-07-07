@@ -39,7 +39,7 @@ def plot_clusters(universe, clusters, skip, reduce_points, colors, start_frame =
                 frame, 
                 frame*universe.trajectory.dt/1000, 
                 cluster_counter))
-        ax = fig.add_subplot(111, projection='3d', aspect='equal')
+        ax = fig.add_subplot(111, projection='3d')
         ax.set_xlim3d(0, universe.dimensions[0])
         ax.set_ylim3d(0, universe.dimensions[1])
         ax.set_zlim3d(0, universe.dimensions[2])
@@ -54,8 +54,8 @@ def plot_clusters(universe, clusters, skip, reduce_points, colors, start_frame =
         fig.savefig('figs_sorted/leaflets_frame-{:09d}.png'.format(universe.trajectory.frame), dpi = 300)
         plt.close()
   
-
-if __name__=='__main__':
+    
+def main():
     try:
         import clustering_input as inp
     except ModuleNotFoundError:
@@ -80,4 +80,8 @@ if __name__=='__main__':
     # this should be in atoms
     min_size = 150
     plot_clusters(data, clusters, skip, 1, colors, start_frame, stop_frame, min_cluster_size = min_size)
+
+if __name__=='__main__':
+    main()
+
         
