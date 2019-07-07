@@ -79,7 +79,50 @@ def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic',
     return explicit_matrix.astype(bool), voxel2atom
 
 
-def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup):
+def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic', 
+                                   max_offset=0.05, frames=2):
+    """
+    Tries to add multiple explicit matrices and mappings together. This might
+    be usefull for clustering at higher matrix resolution (lower than 1 nm).
+    
+    Returns
+    (array) 3d boolean with True for occupied bins
+    (dictionary) atom2voxel mapping
+    """
+    # Starting the current frame
+    current_frame = atomgroup.universe.trajectory.frame
+    explicit_matrix, voxel2atom = gen_explicit_matrix(atomgroup, resolution, 
+                                                      PBC, max_offset)
+    
+    # Try to stack the densities, but could fail due to voxel amount mismatch
+    #  due to pressure coupling and box deformations.
+    # Preventing index errors.
+    max_frame = len(atomgroup.universe.trajectory) - 1
+    end_frame = current_frame + frames
+    
+    frame = current_frame + 1
+    # actual expansion
+    while frame <= max_frame and frame < end_frame:
+        atomgroup.universe.trajectory[frame]
+        temp_explicit_matrix, temp_voxel2atom = gen_explicit_matrix(
+                atomgroup, resolution, PBC, max_offset
+                )
+        try:
+            explicit_matrix += temp_explicit_matrix
+            voxel2atom = {**voxel2atom, **temp_voxel2atom}
+        except IndexError:
+            #TODO testing
+            print('There was a mismerge.')
+            pass
+        frame += 1
+    
+    # Set the active frame back to the current frame    
+    atomgroup.universe.trajectory[current_frame]
+    
+    return explicit_matrix, voxel2atom
+
+
+def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0):
     """
     Converts the voxels in a voxel list back to an atomgroup.
     
@@ -92,12 +135,13 @@ def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup):
     indices = [voxel2atom['x{}y{}z{}'.format(voxel[0], voxel[1], voxel[2])] 
                 for voxel in voxel_list]
     indices = np.concatenate(indices).astype('int')
-    assert np.unique(indices).shape == indices.shape, 'Indices should \
+    if frames == 0:
+        assert np.unique(indices).shape == indices.shape, 'Indices should \
 appear only once.'
     return atomgroup.universe.atoms[indices]
 
 
-def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup):
+def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0):
     """
     Converts the cluster in voxel space to an atomgroup.
     
@@ -110,7 +154,8 @@ def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup):
     for cluster in clusters:
         voxel_list = clusters[cluster]
         atomgroups.append(convert_voxels2atomgroup(voxel_list, 
-                                                  voxel2atom, atomgroup))
+                                                  voxel2atom, atomgroup, 
+                                                  frames))
     return atomgroups
 
 
