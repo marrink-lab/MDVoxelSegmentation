@@ -133,7 +133,8 @@ def volume_clustering(
 def leaflet_clustering(
         selection_tails_atomgroup, selection_headgroups_atomgroup,
         exclusions_selection = False,
-        resolution=1, bits='uint32', verbose=False,
+        resolution=1, bits='uint32', verbose=False, force=False, 
+        force_cutoff=20
         ):
     """
     Clusters each lipid leaflet in the the tails and headgroups. It treats 
@@ -142,6 +143,9 @@ def leaflet_clustering(
     All selections should be MDAnalysis atomgroups. The output is an 
     array with a cluster value for each atom. Clustering is atributed
     per residue. The matrix is stored as a 'uint32' array by default.
+    Force can be used to cluster all lipid residues which are not yet in a 
+    cluster by picking the cluster the 0 bead from the residue is surrounded
+    by most within the force_cutoff (Angstromg).
     """
     # Generating the explicit matix of all headgroups for masking the 
     #  lipid tail densities.
@@ -196,7 +200,6 @@ def leaflet_clustering(
     # Clustering the lipid contours per tail density group.
     list_leaflet_resid_groups = []
     for tails_residuegroup in tails_residuegroups:
-        #TODO This is curerntly being tested to fix the indexing bug.
         # Generating the explicit matrix for the headgroups in current tails.
         local_headgroups_atomgroup = (tails_residuegroup.atoms &
                                       selection_headgroups_atomgroup)
@@ -249,10 +252,29 @@ def leaflet_clustering(
     for cluster, lipid_contour_resid_group in enumerate(
             list_leaflet_resid_groups):
         leaflet_selection = lipid_contour_resid_group.atoms
-        #TODO This is curerntly being tested to fix the indexing bug.
         # Using the atom indices to write the cluster in the universe.atoms
         #   array.
         out_array[leaflet_selection.ix] = cluster+1
+    
+    # Clusters all non clustered lipids to the clusters surrounding their
+    #  0 bead (headgroup in all cases?) most. Cluster 0 is excluded.    
+    if force:
+        non_clustered_atomgroup = clus.non_clustered(
+                selection_headgroups_atomgroup.universe, 
+                out_array, verbose
+                )
+        non_clustered_lipids_atomgroup = (non_clustered_atomgroup & 
+                                          selection_headgroups_atomgroup)
+        clus.force_clustering(selection_headgroups_atomgroup, out_array, 
+                              non_clustered_lipids_atomgroup, force_cutoff)
+        if verbose:
+            print('Missing residues after forced clustering with a '
+                  'cutoff of {} Angstrom:'.format(force_cutoff))
+            non_clustered_atomgroup = clus.non_clustered(
+                    selection_headgroups_atomgroup.universe, 
+                    out_array, verbose
+                    )
+    
     return out_array
     
 
@@ -260,8 +282,8 @@ def mf_leaflet_clustering(universe,
                           tails_selection, headgroups_selection=False,
                           exclusions_selection=False,
                           resolution=1, skip=1, bits='uint32',
-                          verbose=False, start_frame=0, stop_frame=None
-                          ):
+                          verbose=False, start_frame=0, stop_frame=None,
+                          force=True, force_cutoff=20):
     """
     MultiFrame Leaflet Clustering
     
@@ -294,15 +316,14 @@ minutes.\r'
         universe_mask = leaflet_clustering(tails_selection,
                                            headgroups_selection,
                                            exclusions_selection,
-                                           resolution, bits, verbose)
+                                           resolution, bits, verbose, force, 
+                                           force_cutoff)
         clusters.append(universe_mask)
     # This print is needed to get out of the same line as the loading bar of 
     #  the single frame leaflet clustering.    
     print() # Adds a newline to get out of the loading bar line.
     clusters = np.array(clusters, dtype = bits)
     return clusters
-
-
 
 
 def main():
@@ -335,11 +356,12 @@ settings. (An exmaple file should be made here)')
     skip = inp.skip
     output_file = inp.output_file
     resolution = inp.resolution
+    force = inp.force
+    force_cutoff = inp.force_cutoff
     reduce_points = inp.reduce_points
     verbose = inp.verbose
     start_frame = inp.start_frame
     stop_frame = inp.stop_frame
-    #print('start {} stop {}'.format(start_frame, stop_frame))
     bits = 'uint32'
     
     # Staring the clustering.
@@ -349,9 +371,10 @@ settings. (An exmaple file should be made here)')
                                      headgroups_selection,
                                      exclusions_selection,
                                      resolution, skip, bits,
-                                     verbose = verbose,
-                                     start_frame = start_frame,
-                                     stop_frame = stop_frame)
+                                     verbose=verbose,
+                                     start_frame=start_frame,
+                                     stop_frame=stop_frame, force=force, 
+                                     force_cutoff=force_cutoff)
     print('Clustering took: {}'.format(time.time()-start))
     #TODO Writing the output at once this should become a per frame write/append!
     np.save(output_file, clusters.astype(bits))
