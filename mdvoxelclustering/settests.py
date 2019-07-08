@@ -12,78 +12,6 @@ import matplotlib.pyplot as plt
 identity_threshold = 0.0000001
 cluster_mutations = {}
 
-cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'}
-cluster2 = {'b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
-cluster3 = {'c1','c2','c3','c4','c5','c6','c7','c8','c9'}
-cluster4 = {'d1','d2','d3'}
-cluster5 = {'e1','e2','e3','e4','e5','e6','e7','e8'}
-cluster6 = {'f1','f2','f3','f4','f5','f6','f7','f8','f9','f10'}
-cluster7 = {'g1','g2','g3','g4'}
-cluster8 = {'d7','d8','d9','d10','d4','d5'}
-
-olddict1 = {
-        0 : set(),
-        1 : cluster1,
-        2 : cluster2,
-        3 : cluster3,
-        4 : cluster4,
-        5 : cluster5,
-        6 : cluster6,
-        7 : cluster7}
-
-
-olddict2 = {
-        0 : set(),
-        1 : cluster1,
-        2 : cluster2,
-        3 : cluster3,
-        4 : cluster4,
-        5 : cluster5,
-        6 : cluster6,
-        7 : cluster7,
-        8 : cluster8   
-        }
-
-
-olddict3 = {
-        0 : set(),
-        1 : cluster1,
-        2 : cluster2,
-        3 : cluster3,
-        4 : cluster8,
-        5 : cluster5,
-        6 : cluster6,
-        7 : cluster7,
-        8 : cluster4   
-        }
-
-cluster11 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'}
-cluster12 = {'b1','b2','b3','b4','b5'}
-cluster13 = {'c1','c2','c3','c4','c5','c6'}
-cluster14 = {'d1','d2','d3','d4','d5','d6','d7','d8','d9','d10'}
-cluster15 = {'f1','f2','f3','f4','f5','f6','f7','f8','f9','f10'}
-cluster16 = {'e1','e2','e3','e4','e5','e6','e7','e8'}
-cluster17 = {'g1','g2','g3'}
-cluster18 = {'b7','b8','b9','b10'}
-cluster0 = set()
-
-testingclusternumber = 8,
-test3deprecated = {8: {'d1','d2','d3'}}
-frame20 = deque([cluster0,cluster11,cluster12,cluster13,cluster14,cluster15,cluster16,cluster17])
-frame21 = deque([cluster0,cluster11,cluster12,cluster13,cluster14,cluster15,cluster16,cluster17,cluster18])
-frame22 = deque([cluster0,cluster11,cluster12,cluster13,cluster14,cluster15,cluster16,cluster17])
-frame23 = deque([cluster0,cluster11,cluster12,cluster13,cluster14,cluster15,cluster16,cluster17])
-
-test0 = {0: set(), 1: {'a8', 'a5', 'a6', 'a4', 'a9', 'a2', 'a10', 'a7', 'a3', 'a1'}, 2: {'b1', 'b4', 'b3', 'b5', 'b2'}, 3: {'c4', 'c5', 'c6', 'c1', 'c2', 'c3'}, 4: {'d9', 'd5', 'd6', 'd8', 'd10', 'd2', 'd7', 'd1', 'd3', 'd4'}, 5: {'e7', 'e5', 'e6', 'e1', 'e2', 'e3', 'e8', 'e4'}, 6: {'f2', 'f1', 'f3', 'f5', 'f6', 'f7', 'f9', 'f10', 'f8', 'f4'}, 7: {'g3', 'g1', 'g2'}}
-test1 = {0: set(), 1: {'a8', 'a5', 'a6', 'a4', 'a9', 'a2', 'a10', 'a7', 'a3', 'a1'}, 2: {'b1', 'b4', 'b3', 'b5', 'b2'}, 3: {'c4', 'c5', 'c6', 'c1', 'c2', 'c3'}, 4: {'d9', 'd5', 'd6', 'd8', 'd10', 'd2', 'd7', 'd1', 'd3', 'd4'}, 5: {'e7', 'e5', 'e6', 'e1', 'e2', 'e3', 'e8', 'e4'}, 6: {'f2', 'f1', 'f3', 'f5', 'f6', 'f7', 'f9', 'f10', 'f8', 'f4'}, 7: {'g3', 'g1', 'g2'}, 9: {'b8', 'b9', 'b7', 'b10'}}
-test2 = {0: set(), 1: {'a8', 'a5', 'a6', 'a4', 'a9', 'a2', 'a10', 'a7', 'a3', 'a1'}, 2: {'b1', 'b4', 'b3', 'b5', 'b2'}, 3: {'c4', 'c5', 'c6', 'c1', 'c2', 'c3'}, 5: {'e7', 'e5', 'e6', 'e1', 'e2', 'e3', 'e8', 'e4'}, 6: {'f2', 'f1', 'f3', 'f5', 'f6', 'f7', 'f9', 'f10', 'f8', 'f4'},  7: {'g3', 'g1', 'g2'}, 8: {'d1','d2','d3','d4','d5','d6','d7','d8','d9','d10'}}
-test3 = {0: set(), 1: {'a8', 'a5', 'a6', 'a4', 'a9', 'a2', 'a10', 'a7', 'a3', 'a1'}, 2: {'b1', 'b4', 'b3', 'b5', 'b2'}, 3: {'c4', 'c5', 'c6', 'c1', 'c2', 'c3'}, 4: {'d9', 'd5', 'd6', 'd8', 'd10', 'd2', 'd7', 'd1', 'd3', 'd4'}, 5: {'e7', 'e5', 'e6', 'e1', 'e2', 'e3', 'e8', 'e4'},  6: {'f2', 'f1', 'f3', 'f5', 'f6', 'f7', 'f9', 'f10', 'f8', 'f4'}, 7: {'g3', 'g1', 'g2'}}
-test4 = {0: set(), 1: {'a8', 'a5', 'a6', 'a4', 'a9', 'a2', 'a10', 'a7', 'a3', 'a1'}, 2: {'b1', 'b4', 'b3', 'b5', 'b2'}, 3: {'c4', 'c5', 'c6', 'c1', 'c2', 'c3'}, 4: {'d9', 'd5', 'd6', 'd8', 'd10', 'd2', 'd7', 'd1', 'd3', 'd4'}, 5: {'e7', 'e5', 'e6', 'e1', 'e2', 'e3', 'e8', 'e4'}, 6: {'f2', 'f1', 'f3', 'f5', 'f6', 'f7', 'f9', 'f10', 'f8', 'f4'}, 7: {'g3', 'g1', 'g2'}, 8: {'b8', 'b9', 'b7', 'b10'}}
-
-deprecated_dict = {
-        8 : {'b7','b8','b9'}
-}
-
 
 def getlargestset(keylist,setdict):
     largestkey = 0
@@ -238,43 +166,6 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
 #                print ("cluster " + str(newkey) + " was created from cluster " + str(index) + " at frame " + str(frame_number))
 #                add_cluster_change(frame_number,(newkey,index,"c"))
 #        return output,clusternumber,deprecated_clusters
-
-    
-                
-                  
-                
-        
-     
-result,_,_ = compare_clusters(olddict1,frame20,deprecated_dict,8,1)
-assert(result == test0), "Standard merging failed"    
-
-
-result,_,_ =compare_clusters(olddict1,frame20,deprecated_dict,8,1)
-if result == test0 :
-   print ("test0  basisc swap ok :)")       
-
-
-  
-    
-result,resultnumber,_ =compare_clusters(olddict1,frame21,{},8,1)
-if result == test1 and resultnumber == 9 :
-   print ("test1 newcreate ok :)")        
-
-result,resultnumber,resultdep =compare_clusters(olddict1,frame21,deprecated_dict,8,1)
-
-if result == test4 and resultnumber == 8 and resultdep == {} :
-   print ("test4 recreate ok :)")   
-    
-result,_,_ = compare_clusters(olddict2,frame22,{},8,1)
-print(result)
-print(test2)
-if result == test2 :
-   print ("test2  merge ok :)")        
-    
-    
-result,_,resultdep = compare_clusters(olddict3,frame23,{},8,1)
-assert(result == test3 and resultdep == test3deprecated), "Merging test failed"
-
 
 
 def sort_clusters(data):
