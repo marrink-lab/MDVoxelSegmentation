@@ -110,9 +110,9 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
         try:
             explicit_matrix += temp_explicit_matrix
             voxel2atom = {**voxel2atom, **temp_voxel2atom}
-        except IndexError:
+        except ValueError:
             #TODO testing
-            print('There was a mismerge.')
+            #print('There was a mismerge.')
             pass
         frame += 1
     
@@ -438,8 +438,10 @@ def vmd_visualization_single_frame(template_file, clusters):
                     f.write('\\\n')
                 f.write('{} '.format(element))
             f.write('"]\n\n')
-            f.write('$cluster{0} set chain {1}'.format(cluster, 
-                                                       alphabet[cluster-1]))
+            f.write('$cluster{0} set chain {1}'.format(
+                    cluster, 
+                    alphabet[((cluster-1) % 26)],
+                    ))
 
 
 if __name__=='__main__':

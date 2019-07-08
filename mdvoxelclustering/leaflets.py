@@ -1,4 +1,6 @@
 # coding: utf-8
+import multiprocessing as mp
+from functools import partial
 import MDAnalysis as mda
 from . import clustering as clus
 import numpy as np
@@ -291,6 +293,7 @@ def leaflet_clustering(
             print()
     
     return out_array
+
     
 
 def mf_leaflet_clustering(universe,
@@ -344,6 +347,134 @@ minutes.\r'
     return clusters
 
 
+def leaflet_clustering_threaded(
+        current_frame,
+        selection_tails_atomgroup, 
+        selection_headgroups_atomgroup,
+        exclusions_selection = False,
+        resolution=1, bits='uint32', verbose=False, force=False, 
+        force_cutoff=20, frames=1, force_info=True,
+        ):
+    """
+    Threaded leaflet clutsering.
+    """
+    selection_tails_atomgroup.universe.trajectory[current_frame]
+    clusters = leaflet_clustering(
+            selection_tails_atomgroup,
+            selection_headgroups_atomgroup,
+            exclusions_selection,
+            resolution, bits, verbose, force, 
+            force_cutoff, frames,
+            force_info
+            )
+    # The actual clustering of individual frames.
+    clusters = np.asarray(clusters, dtype = bits)
+
+    return clusters
+
+
+def mf_leaflets_threaded(current_thread):
+    # Parsing the input file.
+    try:
+        import clustering_input as inp
+    except ModuleNotFoundError:
+        print('There should be a file called clustering_input.py with needed\
+settings. (An exmaple file should be made here)')
+        sys.exit()
+    # Generating the universe.
+    #print('Reading trajectory...')
+    universe = mda.Universe(inp.tpr, inp.xtc)
+
+    # Importing selection queries from input file.
+    tails_selection = universe.select_atoms(inp.tails_selection_query)
+    if inp.headgroups_selection_query == False:
+        headgroups_selection = False
+    else:
+        headgroups_selection = universe.select_atoms(
+                inp.headgroups_selection_query)
+    if inp.exclusions_selection_query == False:
+        exclusions_selection = False
+    else:
+        exclusions_selection = universe.select_atoms(
+                inp.exclusions_selection_query)
+    
+    # Setting some other variables.
+    resolution = inp.resolution
+    force = inp.force
+    force_cutoff = inp.force_cutoff
+    verbose = inp.verbose
+    frames = inp.frames
+    force_info = inp.force_info
+    start_frame = inp.start_frame
+    stop_frame = inp.stop_frame
+    skip = inp.skip
+    threads = inp.threads
+    bits = 'uint32'
+    
+    # multi processing bit
+    total_frames = stop_frame - start_frame
+    frames_per_process = total_frames//threads
+    start_frame = start_frame + (frames_per_process * current_thread)
+    stop_frame = start_frame + frames_per_process
+    if current_thread == threads - 1:
+        stop_frame = inp.stop_frame
+    # Staring the clustering.
+    #print('Actual clustering...')
+    clusters = mf_leaflet_clustering(
+        universe,
+        tails_selection, headgroups_selection,
+        exclusions_selection,
+        resolution, skip, bits,
+        verbose, start_frame, stop_frame,
+        force, force_cutoff, frames, 
+        force_info)
+    
+    return clusters
+
+
+def main_threaded():
+    try:
+        import clustering_input as inp
+    except ModuleNotFoundError:
+        print('There should be a file called clustering_input.py with needed\
+settings. (An exmaple file should be made here)')
+        sys.exit()
+    # Generating the universe.
+    print('Reading trajectory...')
+    universe = mda.Universe(inp.tpr, inp.xtc)
+
+    # Setting some other variables.
+    plotting = inp.plotting
+    skip = inp.skip
+    reduce_points = inp.reduce_points
+    start_frame = inp.start_frame
+    stop_frame = inp.stop_frame
+    bits = 'uint32'
+    output_file = inp.output_file
+    threads = inp.threads
+
+    # Staring the clustering.
+    print('Actual clustering...')
+    start = time.time()
+    
+    pool = mp.Pool(threads)
+    clusters = pool.map(mf_leaflets_threaded, range(threads))
+    clusters = np.asarray(clusters)
+    clusters = np.concatenate(clusters, axis=0)
+    pool.close()
+    pool.join()
+    
+    print(clusters, len(clusters))
+    
+    print('Clustering took: {}'.format(time.time()-start))
+    #TODO Writing the output at once this should become a per frame write/append!
+    np.save(output_file, clusters.astype(bits))
+
+    # Some basic plotting.
+    if plotting:
+        plot_clusters(universe, clusters, skip, reduce_points, min_size = 150,
+                      start_frame = start_frame, stop_frame = stop_frame)
+
 def main():
     # Parsing the input file.
     try:
@@ -383,19 +514,22 @@ settings. (An exmaple file should be made here)')
     frames = inp.frames
     force_info = inp.force_info
     bits = 'uint32'
+
     
     # Staring the clustering.
     print('Actual clustering...')
     start = time.time()
-    clusters = mf_leaflet_clustering(universe, tails_selection,
-                                     headgroups_selection,
-                                     exclusions_selection,
-                                     resolution, skip, bits,
-                                     verbose=verbose,
-                                     start_frame=start_frame,
-                                     stop_frame=stop_frame, force=force, 
-                                     force_cutoff=force_cutoff, frames=frames,
-                                     force_info=force_info)
+    clusters = mf_leaflet_clustering(
+            universe, tails_selection,
+            headgroups_selection,
+            exclusions_selection,
+            resolution, skip, bits,
+            verbose=verbose,
+            start_frame=start_frame,
+            stop_frame=stop_frame, force=force, 
+            force_cutoff=force_cutoff, frames=frames,
+            force_info=force_info,
+            )
     print('Clustering took: {}'.format(time.time()-start))
     #TODO Writing the output at once this should become a per frame write/append!
     np.save(output_file, clusters.astype(bits))
