@@ -64,22 +64,24 @@ def main():
     start_frame = inp.start_frame
     stop_frame = inp.stop_frame
     skip = inp.skip
+    plotting = inp.plotting
 
-#    colors = get_spaced_colors(30)
-#    colors = np.array(colors)
-#    #TODO this has to be changed
-#    colors = colors/255
-    prop_cycle = plt.rcParams['axes.prop_cycle']
-    colors = prop_cycle.by_key()['color']
-
-
-    print('Loading universe...')
-    data = mda.Universe(inp.tpr, inp.xtc)
-    print('Loading clusters...')
-    clusters = np.load('clusters_ordered.npy')
-    # this should be in atoms
-    min_size = 150
-    plot_clusters(data, clusters, skip, 1, colors, start_frame, stop_frame, min_cluster_size = min_size)
+    if plotting:
+    #    colors = get_spaced_colors(30)
+    #    colors = np.array(colors)
+    #    #TODO this has to be changed
+    #    colors = colors/255
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        colors = prop_cycle.by_key()['color']
+    
+    
+        print('Loading universe...')
+        data = mda.Universe(inp.tpr, inp.xtc)
+        print('Loading clusters...')
+        clusters = np.load('clusters_ordered.npy')
+        # this should be in atoms
+        min_size = 150
+        plot_clusters(data, clusters, skip, 1, colors, start_frame, stop_frame, min_cluster_size = min_size)
 
 if __name__=='__main__':
     main()
