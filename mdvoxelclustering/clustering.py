@@ -9,7 +9,6 @@ import time
 import itertools
 from shutil import copyfile
 from collections import Counter
-import MDAnalysis.lib.NeighborSearch
 
 
 def Most_Common(lst):
@@ -80,10 +79,13 @@ def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic',
 
 
 def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic', 
-                                   max_offset=0.05, frames=2):
+                                   max_offset=0.05, frames=0, hyper_res=False):
     """
     Tries to add multiple explicit matrices and mappings together. This might
     be usefull for clustering at higher matrix resolution (lower than 1 nm).
+    Frames is used to smear over extra consecutive frames (0 is no smearing
+    over time). Hyper_res is used to smear the data points over half the
+    resolution. Hyper_res and frame smearing is exclusive for now.
     
     Returns
     (array) 3d boolean with True for occupied bins
@@ -94,35 +96,65 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
     explicit_matrix, voxel2atom = gen_explicit_matrix(atomgroup, resolution, 
                                                       PBC, max_offset)
     
+    if hyper_res:
+        # this can be removed by making the mod positions smarter
+        ref_positions = np.copy(atomgroup.positions)
+        mod_values = list(itertools.product([-1, 0, 1], 
+                                            [-1, 0, 1], 
+                                            [-1, 0, 1],
+                                            ))
+        # removing the 000 entry for it is done by default.
+        mod_values.remove((0, 0, 0))
+        # scaling the mod_values with the resolution.
+        mod_values = np.array(mod_values, dtype=float)
+        mod_values *= (resolution/2)
+        
+        # generating the hyper res explicit matrix
+        for mod_value in mod_values:
+            mod_positions = ref_positions + mod_value
+            atomgroup.positions = mod_positions
+            temp_explicit_matrix, temp_voxel2atom = gen_explicit_matrix(
+                    atomgroup, resolution, PBC, max_offset
+                    )
+            explicit_matrix += temp_explicit_matrix
+            voxel2atom = {**voxel2atom, **temp_voxel2atom}
+            
+            # restoring the positions
+            # this can be removed by making the mod positions smarter
+            atomgroup.positions = ref_positions
+        return explicit_matrix, voxel2atom
+    
     # Try to stack the densities, but could fail due to voxel amount mismatch
     #  due to pressure coupling and box deformations.
     # Preventing index errors.
     max_frame = len(atomgroup.universe.trajectory) - 1
     end_frame = current_frame + frames
     
+    # actual expansion for multiframe smearing
     frame = current_frame + 1
-    # actual expansion
     while frame <= max_frame and frame < end_frame:
         atomgroup.universe.trajectory[frame]
+        # Smearing the positions for hyper res.
+
         temp_explicit_matrix, temp_voxel2atom = gen_explicit_matrix(
-                atomgroup, resolution, PBC, max_offset
-                )
+                    atomgroup, resolution, PBC, max_offset
+                    )
         try:
             explicit_matrix += temp_explicit_matrix
-            voxel2atom = {**voxel2atom, **temp_voxel2atom}
+            #voxel2atom = {**voxel2atom, **temp_voxel2atom}
         except ValueError:
             #TODO testing
             #print('There was a mismerge.')
             pass
         frame += 1
-    
     # Set the active frame back to the current frame    
     atomgroup.universe.trajectory[current_frame]
     
     return explicit_matrix, voxel2atom
 
 
-def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0):
+def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0, 
+                             hyper_res=False):
     """
     Converts the voxels in a voxel list back to an atomgroup.
     
@@ -135,13 +167,14 @@ def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0):
     indices = [voxel2atom['x{}y{}z{}'.format(voxel[0], voxel[1], voxel[2])] 
                 for voxel in voxel_list]
     indices = np.concatenate(indices).astype('int')
-    if frames == 0:
+    if frames == 0 and not hyper_res:
         assert np.unique(indices).shape == indices.shape, 'Indices should \
 appear only once.'
     return atomgroup.universe.atoms[indices]
 
 
-def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0):
+def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0, 
+                                hyper_res=False):
     """
     Converts the cluster in voxel space to an atomgroup.
     
@@ -155,7 +188,7 @@ def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0):
         voxel_list = clusters[cluster]
         atomgroups.append(convert_voxels2atomgroup(voxel_list, 
                                                   voxel2atom, atomgroup, 
-                                                  frames))
+                                                  frames, hyper_res))
     return atomgroups
 
 
