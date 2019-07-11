@@ -35,6 +35,10 @@ Features
     - Complex lipids formulations including cholesterol
     - Up to millions of beads in seconds
 
+Examples
+--------
+Example files for leaflet clustering and VMD visualization can be found in the `example_inputs` folder.
+
 Credits
 ---------
 
