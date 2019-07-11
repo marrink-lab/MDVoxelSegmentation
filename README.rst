@@ -35,7 +35,6 @@ Features
     - Complex lipids formulations including cholesterol
     - Up to millions of beads in seconds
 
-
 Credits
 ---------
 
