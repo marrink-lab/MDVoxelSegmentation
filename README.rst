@@ -41,10 +41,12 @@ Example files for leaflet clustering and VMD visualization can be found in the `
 
 .. image:: https://user-images.githubusercontent.com/1488903/61180809-e43cdd80-a61c-11e9-91d7-7d13539c9c16.png
 **Clustering of the inverted hexagonal phase with four inner channels connected to a bilayer with a fusion stalk.**
+
 Inside the channels is a fragment of dsDNA. The leaflet clustering was performed using a resolution of 0.5 and hyperesolution turned on. This to allow for the correct clustering of the tight geometry of the channels in coarse grain data (Martini), also force clustering was turned on to have (almost?) every lipid assigned up to a distance of 2 nm.
 
 .. image:: https://user-images.githubusercontent.com/1488903/61180812-f9b20780-a61c-11e9-838f-f42e54133669.png
 **Leaflet clustering of a complex plasmamembrane thether.**
+
 The two leaflets of the plasmamembrane are clearly assigned correctly and depicted as a transparent surface. The cholesterol inside the two leaflets is drawn in VDW spheres and their headgroups have a slightly altering colour. All cholesterol seems to be assigned correctly. Clustering was performed with a 1 nm resolution and forced clustering to assign (all?) the diving cholesterol up to a distance of 2 nm.
 
 Credits
