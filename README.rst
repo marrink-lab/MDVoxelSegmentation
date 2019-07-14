@@ -49,6 +49,11 @@ Inside the channels is a fragment of dsDNA. The leaflet clustering was performed
 
 The two leaflets of the plasmamembrane are clearly assigned correctly and depicted as a transparent surface. The cholesterol inside the two leaflets is drawn in VDW spheres and their headgroups have a slightly altering colour. All cholesterol seems to be assigned correctly. Clustering was performed with a 1 nm resolution and forced clustering to assign (all?) the diving cholesterol up to a distance of 2 nm.
 
+.. image:: https://user-images.githubusercontent.com/1488903/61181667-b90cbb00-a629-11e9-9fc0-b2d52e4eaa93.png
+**Leaflet clustering of a plasma membrane including multiple proteins.**
+
+The leaflet assignment seemed to have worked correctly, however, we do see some noise in places where we wouldn't expect it at first sight and this behaviour is to be further inspected. For clustering a resolution of 1 nm and forced clustering within 2nm was used. The protein beads were used as exclusion to prevent flopping lipids next to proteins to intervene with the leaflet assignment. In total 1.3 millions beads were clustered in less than a minute on a desktop.
+
 Credits
 ---------
 
