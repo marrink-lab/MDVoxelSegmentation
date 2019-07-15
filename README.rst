@@ -22,7 +22,7 @@ This software has been developed to allow for a higher selection syntax than ato
 
 Features
 --------
-* This is an alpha build and should be used with extreme care!
+* v0.5 is an alpha build and should be used with extreme care!
 * Voxel based neighbour clustering under cubic periodic boudaries
 * Fast contour clustering
 * Compatible with most MD file formats due to its tight link to MDAnalysis
