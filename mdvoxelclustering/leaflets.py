@@ -147,7 +147,8 @@ def leaflet_clustering(
         selection_tails_atomgroup, selection_headgroups_atomgroup,
         exclusions_selection = False,
         resolution=1, bits='uint32', verbose=False, force=False, 
-        force_cutoff=20, frames=1, force_info=True, hyper_res = False
+        force_cutoff=20, frames=1, force_info=True, hyper_res = False,
+        min_cluster_size = 0
         ):
     """
     Clusters each lipid leaflet in the the tails and headgroups. It treats 
@@ -158,7 +159,8 @@ def leaflet_clustering(
     per residue. The matrix is stored as a 'uint32' array by default.
     Force can be used to cluster all lipid residues which are not yet in a 
     cluster by picking the cluster the 0 bead from the residue is surrounded
-    by most within the force_cutoff (Angstromg).
+    by most within the force_cutoff (Angstromg). Also takes a minimum cluster
+    size in atoms. Clusters smaller than the cutoff will not be returned.
     """
     # Generating the explicit matix of all headgroups for masking the 
     #  lipid tail densities.
@@ -274,10 +276,14 @@ def leaflet_clustering(
                          dtype = bits)
     for cluster, leaflet_resid_group in enumerate(
             list_leaflet_residgroups):
+        # Satisfying minimum clustersize.
         leaflet_selection = leaflet_resid_group.atoms
-        # Using the atom indices to write the cluster in the universe.atoms
-        #   array.
-        out_array[leaflet_selection.ix] = cluster+1
+        if len(leaflet_selection) > min_cluster_size:
+            # Using the atom indices to write the cluster in the
+            #   universe.atoms array.
+            out_array[leaflet_selection.ix] = cluster+1
+
+            
     
     # Clusters all non clustered lipids to the clusters surrounding their
     #  0 bead (headgroup in all cases?) most. Cluster 0 is excluded.    
@@ -299,6 +305,7 @@ def leaflet_clustering(
                     )
             print()
     
+    
     return out_array
 
     
@@ -309,7 +316,8 @@ def mf_leaflet_clustering(universe,
                           resolution=1, skip=1, bits='uint32',
                           verbose=False, start_frame=0, stop_frame=None,
                           force=True, force_cutoff=20, frames=1, 
-                          force_info=True, hyper_res=False):
+                          force_info=True, hyper_res=False, 
+                          min_cluster_size = 0):
     """
     MultiFrame Leaflet Clustering
     
@@ -345,7 +353,8 @@ minutes.\r'
                                            resolution, bits, verbose, force, 
                                            force_cutoff, frames=frames,
                                            force_info=force_info,
-                                           hyper_res = hyper_res
+                                           hyper_res = hyper_res, 
+                                           min_cluster_size = min_cluster_size 
                                            )
         clusters.append(universe_mask)
     # This print is needed to get out of the same line as the loading bar of 
@@ -361,7 +370,8 @@ def leaflet_clustering_threaded(
         selection_headgroups_atomgroup,
         exclusions_selection = False,
         resolution=1, bits='uint32', verbose=False, force=False, 
-        force_cutoff=20, frames=1, force_info=True, hyper_res = False
+        force_cutoff=20, frames=1, force_info=True, hyper_res = False,
+        min_cluster_size = 0
         ):
     """
     Threaded leaflet clutsering.
@@ -373,7 +383,8 @@ def leaflet_clustering_threaded(
             exclusions_selection,
             resolution, bits, verbose, force, 
             force_cutoff, frames,
-            force_info, hyper_res = hyper_res
+            force_info, hyper_res = hyper_res,
+            min_cluster_size = min_cluster_size
             )
     # The actual clustering of individual frames.
     clusters = np.asarray(clusters, dtype = bits)
@@ -409,6 +420,7 @@ settings. (An exmaple file should be made here)')
     # Setting some other variables.
     resolution = inp.resolution
     hyper_res = inp.hyper_res
+    min_cluster_size = inp.min_cluster_size
     force = inp.force
     force_cutoff = inp.force_cutoff
     verbose = inp.verbose
@@ -438,7 +450,8 @@ settings. (An exmaple file should be made here)')
         resolution, skip, bits,
         verbose, start_frame, stop_frame,
         force, force_cutoff, frames, 
-        force_info, hyper_res = hyper_res)
+        force_info, hyper_res = hyper_res,
+        min_cluster_size = min_cluster_size)
     
     return clusters
 
@@ -517,6 +530,7 @@ settings. (An exmaple file should be made here)')
     output_file = inp.output_file
     resolution = inp.resolution
     hyper_res = inp.hyper_res
+    min_cluster_size = inp.min_cluster_size
     force = inp.force
     force_cutoff = inp.force_cutoff
     reduce_points = inp.reduce_points
@@ -540,7 +554,8 @@ settings. (An exmaple file should be made here)')
             start_frame=start_frame,
             stop_frame=stop_frame, force=force, 
             force_cutoff=force_cutoff, frames=frames,
-            force_info=force_info, hyper_res = hyper_res
+            force_info=force_info, hyper_res = hyper_res, 
+            min_cluster_size = min_cluster_size,
             )
     print('Clustering took: {}'.format(time.time()-start))
     #TODO Writing the output at once this should become a per frame write/append!
