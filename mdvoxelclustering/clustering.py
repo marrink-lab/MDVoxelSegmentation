@@ -288,6 +288,9 @@ def force_clustering(ref_atomgroup, clusters, non_clustered_atomgroup,
     Takes a reference selection (headgroups atomgroup for leaflets), clusters 
     (arr) and a non-clustered atomgroup to cluster all non-clustered atoms to 
     the most prevalent surrounding cluster around their bead 0.
+
+    !!! THERE SEEMS TO BE ABUG IN THIS FUNCTION ENDING UP WITH WEIRD NON
+    LOCALIZED CLUSTERS THERE MUST BE SOME INDEXING ERROR SOMEHWERE!!!
     
     Returns clusters (arr).
     """
@@ -331,7 +334,7 @@ def force_clustering(ref_atomgroup, clusters, non_clustered_atomgroup,
 # The 3d example of a very clear more set oriented neighbour clustering
 #@profile
 def set_clustering(explicit_matrix, exclusion_mask=False, span=1, 
-                   verbose=False):
+                   verbose=False, min_cluster_size = 0):
     """
     A set oriented neighbour voxel clustering.
     
@@ -340,7 +343,7 @@ def set_clustering(explicit_matrix, exclusion_mask=False, span=1,
     a boolean array. The exclusion mask acts as a dead zone for clustering. 
     The span is used to expand clustering to the first N neighbours
     in voxel space. Verbose can be used for more information during the 
-    clustering.
+    clustering. A minimum cluster size in voxels can be given if required.
     
     Returns a dictionary of clusters with a list of voxels per cluster.    
     """
@@ -411,6 +414,15 @@ def set_clustering(explicit_matrix, exclusion_mask=False, span=1,
     if verbose:
         print('It took {} to cluster {} clusters \
 with a total of {} points'.format(stop-start, len(clusters), len(positions)))
+        
+    # incorporating the cutoff condition for minimum segment size, this could
+        # be moved so it doesn't require one extra loop, but its only done 
+        # once per frame so we should be ok.
+#    if min_cluster_size > 0:
+#        for cluster in clusters.keys():
+#            if len(clusters[cluster]) < min_cluster_size:
+#                clusters.pop(cluster)
+            
     return clusters
 
 
