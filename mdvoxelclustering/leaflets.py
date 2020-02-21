@@ -10,6 +10,8 @@ import os
 import time
 import sys
 
+mda.core.periodic = True
+
 ### Only for testing
 def plot_voxels(array):
     """
@@ -162,12 +164,21 @@ def leaflet_clustering(
     by most within the force_cutoff (Angstromg). Also takes a minimum cluster
     size in atoms. Clusters smaller than the cutoff will not be returned.
     """
+    test = 1
+    #TODO REMOVE PRINT
+    if test:
+        print('\n{}'.format(test))
+        test += 1
     # Generating the explicit matix of all headgroups for masking the 
     #  lipid tail densities.
     headgroups_mask, headgroups_mapping = clus.gen_explicit_matrix_multiframe(
             selection_headgroups_atomgroup, resolution, frames=frames,
             hyper_res = hyper_res)
     
+    #TODO REMOVE PRINT
+    if test:
+        print('{}'.format(test))
+        test += 1
     ### Creating the exclusion mask for clustering around the proteins
     #   this will be use to set the protein (flanking) pixels to touched
     #   in the clustering queue. Therefore they will act as a stop. 
@@ -186,6 +197,10 @@ def leaflet_clustering(
     else:
         exclusion_mask = False
 
+    #TODO REMOVE PRINT
+    if test:
+        print('{}'.format(test))
+        test += 1
     # Clustering the tail density for tail grouping excluding the
     #  tail densities which are masked by headgroups.
     tails_clusters, tails_mapping, tails_mask = volume_clustering(
@@ -221,7 +236,20 @@ def leaflet_clustering(
    
     # Clustering the lipid contours per tail density group.
     list_leaflet_residgroups = []
+    
+    #TODO REMOVE PRINT
+    if test:
+        print('{}'.format(test))
+        test += 1
+        test_loop = 1
+    
     for tails_residuegroup in tails_residuegroups:
+        
+        #TODO REMOVE PRINT
+        if test:
+            print('{}:{}'.format(test, test_loop))
+            test_loop += 1
+            
         # Generating the explicit matrix for the headgroups in current tails.
         local_headgroupsatomgroup = (tails_residuegroup.atoms &
                                       selection_headgroups_atomgroup)
@@ -278,34 +306,42 @@ def leaflet_clustering(
             list_leaflet_residgroups):
         # Satisfying minimum clustersize.
         leaflet_selection = leaflet_resid_group.atoms
+        # The minimum size is already satisfied and does not need to be
+        #  checked again.
         if len(leaflet_selection) > min_cluster_size:
             # Using the atom indices to write the cluster in the
             #   universe.atoms array.
             out_array[leaflet_selection.ix] = cluster+1
 
-            
     
-    # Clusters all non clustered lipids to the clusters surrounding their
-    #  0 bead (headgroup in all cases?) most. Cluster 0 is excluded.    
+    # Tries to clusters non clustered lipids to the clusters surrounding their
+    #  headgroups. Cluster 0 is excluded.    
+    
+    #TODO REMOVE THESE TESTS!
+    if test:
+        print('{}, now its recurion time'.format(test))
+        test += 1
+    
+    #TODO Remove the hard codedness here.
     if force:
-        non_clustered_atomgroup = clus.non_clustered(
-                selection_headgroups_atomgroup.universe, 
-                out_array, force_info,
-                )
-        non_clustered_lipids_atomgroup = (non_clustered_atomgroup & 
-                                          selection_headgroups_atomgroup)
-        clus.force_clustering(selection_headgroups_atomgroup, out_array, 
-                              non_clustered_lipids_atomgroup, force_cutoff)
+        clus.iterative_force_clustering(
+            selection_headgroups_atomgroup.select_atoms('(name PO4 GL1 GL2 C1A C1B AM1 AM2 GM1 GM2 COO COOH) or (resname CHOL and name ROH) or (resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and name C1 C2 C3 P1 P2 P3)'), 
+            int(force_cutoff*(2/3)), out_array, 
+            np.unique(out_array), max_cutoff=force_cutoff, max_stop=20, 
+            cutoff_increment=1, verbose=False)
+        
         if force_info:
-            print('Missing residues after forced clustering with a '
-                  'cutoff of {} Angstrom:'.format(force_cutoff))
-            non_clustered_atomgroup = clus.non_clustered(
-                    selection_headgroups_atomgroup.universe, 
-                    out_array, force_info
-                    )
-            print()
+            non_clustered_atoms = clus.non_clustered(
+                selection_headgroups_atomgroup,
+                out_array)
+            print('{} Non clustered to be clustered atoms after forced '
+                  'clustering with a cutoff of {} Angstrom:'.format(
+                      non_clustered_atoms, force_cutoff))
     
-    
+    if test:
+        print('{}, recursion done'.format(test))
+        test += 1
+
     return out_array
 
     
@@ -326,6 +362,16 @@ def mf_leaflet_clustering(universe,
     The output is an array containing the cluster per atom per frame. 
     Skip is used to skip frames for analysis. The cluster array is in a
     unsigned 32 bit format by default, allowing for 4294967296 unique clusters.
+    
+    TODO I should not chunk the data in consecutive  chunks, its much better
+    to perform the multiprocess at start+thread::num_threads. This allows
+    for a much better performance in the parrelelization. This is due to the 
+    fact there depending on the configuration in the box, the algorythm might
+    have a harder time figuring it out. This in combination that there is a 
+    time correlation in the data, this would mean that there are certain 
+    consequtive regions which might be harder then others. Therefore it is
+    wise to split the data in a skip manner, to divide correlated frames to
+    different threads. There a much better total load balance is achieved.
     """
     start = time.time()
     clusters = []

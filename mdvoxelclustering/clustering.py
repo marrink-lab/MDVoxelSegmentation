@@ -10,14 +10,8 @@ import itertools
 from shutil import copyfile
 from collections import Counter
 
-
-def Most_Common(lst):
-    """
-    Returns the most common element in a list.
-    """
-    data = Counter(lst)
-    return data.most_common(1)[0][0]
-
+# Make sure we take PBC into account
+mda.core.periodic = True
 
 def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic', 
                         max_offset=0.05):
@@ -264,72 +258,197 @@ def find_neighbours(position, dimensions, span=1):
     return neighbours
 
 
-def non_clustered(universe, clusters, verbose=False):
+
+
+#@profile
+def non_clustered_atomgroup(atomgroup, cluster_array):
     """
-    Displays the residue count for non-clustered components.
+    Takes an atomgroup and a cluster array of same size (2D array) and returns an
+    atomgroup containing all atoms in the atomgroup which have cluster 0 assigned in the
+    cluster array.
+    """
+    # Find the non-clustered indices only for the headgroups with respect to the headgroup indices
+    non_clustered_indices = cluster_array[atomgroup.ix] == 0
     
-    Returns non-clustered atomgroup.
-    """
-    atom_indices = np.asarray(np.where(clusters == 0))[0]
-    non_clustered_atomgroup = universe.atoms[atom_indices]
-    non_clustered_residues_counted = Counter(non_clustered_atomgroup.moltypes)
-    if verbose:
-        message = 'The following residues were not clustered:'
-        print(message, non_clustered_residues_counted)
+    # Obtaining the atomgroup for which we have to perform a neighbourhood search with a certain cutoff.
+    non_clustered_atomgroup = atomgroup[non_clustered_indices] # this returns an atomgroup
     
     return non_clustered_atomgroup
 
 
-def force_clustering(ref_atomgroup, clusters, non_clustered_atomgroup, 
-                     cutoff=20):
+#@profile
+def find_key_with_max_value(dictionary):
     """
-    Forces clustering by neighboursearching within cutoff (in place!).
+    Takes a dictionary and returns the key with the highest value. 
+    If there is no unique highest value, 0 is returned.
     
-    Takes a reference selection (headgroups atomgroup for leaflets), clusters 
-    (arr) and a non-clustered atomgroup to cluster all non-clustered atoms to 
-    the most prevalent surrounding cluster around their bead 0.
-
-    !!! THERE SEEMS TO BE ABUG IN THIS FUNCTION ENDING UP WITH WEIRD NON
-    LOCALIZED CLUSTERS THERE MUST BE SOME INDEXING ERROR SOMEHWERE!!!
-    
-    Returns clusters (arr).
+    EXPERIMENTAL WITH THE AT LEAST 5 BIGGER MAX VALUE.
     """
-    non_clustered_residuegroup = non_clustered_atomgroup.residues
-    ref = mda.lib.NeighborSearch.AtomNeighborSearch(ref_atomgroup - 
-                                                    non_clustered_atomgroup, 
-                                                    None)
+    #TODO PART OF TESTING THE MINIMUM REQUIREMENT
+    min_diff = 0
+    # convert the dictionary items to list so they are fixed
+    values = list(dictionary.values())
+    keys = list(dictionary.keys())
+    # Find the maximum value
+    max_value = dictionary[keys[values.index(max(values))]]
+    # Find all keys with the maximum value
+    max_keys = [keys for keys, values in dictionary.items() if values == max_value]
+    # Only return a hit if the maximum value is unique
+    if len(max_keys) == 1:
+        #TODO Maybe implement this in a nice manner I have to think about this
+        for value in values:
+            if max_value == value:
+                continue
+            #print('\n\n\n max_value - value = {}'.format(max_value - (value + min_diff)))
+            if max_value <= value + min_diff:
+                break
+        else:
+            return max_keys[0]
+    
+    return 0
 
-    # Using the ref to find the residues within 20A of the unclustered 
-    #  residue (headgroup only!!!).
-    neighbouring_cluster_ids = []
-    for residue in non_clustered_residuegroup:
-        hits = ref.search(residue.atoms[0], cutoff, 'A')
-        try:
-            neighbouring_cluster_ids.append([residue.ix, hits.atoms.ix])
-        except AttributeError:
-            continue
+#@profile    
+def find_dominant_neighbour_cluster(ref_atomgroup, query_atomgroup, cutoff, 
+                                    cluster_array, possible_clusters):
+    """
+    Uses the query_atomgroup to perform a neighbour search and find the dominant cluster 
+    (if there is one) for a the residues of the atoms in the query_atomgroup. 
+    If there is no unique dominant cluster, the function returns 0.
+    If there are cluster_array indices to alter, it will return the query_atomgroup. The possible cluster
+    can be given to prevent searching for it in each iteration.
+    """
+    # Performing a distance search with a certain cutoff for a non clustered headgroup.
+    # Creating the bounding box for PBC search
+    # Setting the reference atomgroup for the search, excluding the self particles.
+    ref = mda.lib.NeighborSearch.AtomNeighborSearch(ref_atomgroup - query_atomgroup,
+                                                    ref_atomgroup.dimensions )
+    # Performing the neighbourhood search with a cutoff of 10 Angstrom
+    hits = ref.search(query_atomgroup, cutoff, 'A') # A is for Angstrom
+    # Obtaining the cluster value for each hit if there is a hit at all.
+    if len(hits) > 0:
+        hit_clusters = cluster_array[hits.ix]
+    else: 
+        return 0
+    
+    # Counting the cluster prevalence in the hit_clusters
+    cluster_count = {}
+    for possible_cluster in possible_clusters:
+        cluster_count[possible_cluster] = 0
+    for hit_cluster in hit_clusters:
+        cluster_count[hit_cluster] += 1
+        
+    # Obtaining the dominant cluster (if there is one)
+    dominant_cluster = find_key_with_max_value(cluster_count)
+    
+    # Mapping the query headgroup complete residue indices with respect to the 
+    #  cluster array and their dominant cluster. 
+    if dominant_cluster != 0:
+        return [query_atomgroup, dominant_cluster]
+    # Return 0 is nothing was changed
+    return 0
 
-    # Map the atom id's to their clusters and use find the most prevalent 
-    #  one excluding cluster 0.
-    closest_cluster_per_residue = []
-    for x in range(len(neighbouring_cluster_ids)):
-        neighbouring_clusters = clusters[neighbouring_cluster_ids[x][1]]
-        neighbouring_clusters = list(filter(lambda a: a != 0, 
-                                            neighbouring_clusters))
-        try:
-            closest_cluster_per_residue.append(
-                    [non_clustered_residuegroup[x], 
-                     Most_Common(neighbouring_clusters)]
-                    )
-        except IndexError:
-            continue
-    # set the cluster 0 residues to the most occuring cluster around their 
-    #  first atom.
-    for residue, cluster in closest_cluster_per_residue:
-        affected_indices = residue.atoms.ix
-        clusters[affected_indices] = cluster
-    return clusters
+#@profile
+def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
+    """
+    Assigns a clusters to all non clustered residues with a shared atom in the query_atomgroup in the cluster
+    array. The cluster ID is only changed if there is a dominant cluster around the atom in the query_atomgroup
+    within a certain cutoff (no unique max --> no reassignment). The changes to the cluster array are made in
+    place, the funtion will return an empty list if it performed no alterations in the cluster_array 
+    and a list containing all clustered atomgroups, it also returns the leftover atoms. 
+    
+    All changes are made at once to make the fairest dominant cluster assignment and prevent order dependency 
+    for the dominant cluster. An array of possble cluster can be specified to prevent recalculation
+    by putting np.unique(cluster_array) at the position of possible clusters.
+    
+    #TODO I should also make the query_atomgroup an input for it can take
+    a long time to compute for large systems and since we keep track of our
+    changes, we should be able to update it using a change log apporach.
+    """
+    query_atomgroup = non_clustered_atomgroup(ref_atomgroup, cluster_array)
+    query_residuegroup = query_atomgroup.residues
+    
+    # Try to make the changes and either still return an empy list or a list of (atomgroup, dominant_cluster) or
+    # simply an empty list for a failed case.
+    changes = []
+    leftovers = 5
+    for residue in query_residuegroup:
+        active_atoms = residue.atoms & ref_atomgroup
+        temp_changes = find_dominant_neighbour_cluster(ref_atomgroup, active_atoms, cutoff, 
+                                                       cluster_array, possible_clusters)
+        # Only accept the change, if it returned non zero (the ouput for no change). Else add them to leftovers
+        if temp_changes == 0:
+            leftovers += 1
+        else:
+            temp_changes[0] = temp_changes[0].residues.atoms
+            print(temp_changes)
+            changes.append(temp_changes)
+    # Altering the cluster assignment in the cluster array for non 0 changes
+    for change in changes:
+            cluster_array[change[0].ix] = change[1]
+    return changes, leftovers
 
+#@profile
+def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array, 
+                               possible_clusters, max_cutoff=20, max_stop=1, 
+                               cutoff_increment=5, verbose=False):
+    """
+    This performs an iterative force_clustering and stops when there is nothing changed.
+    It returns a tuple(3) of occupation of each cluster per iteration in a dict if verbose is set to true, as well as 
+    the dynamic cutoffs list and the leftovers list.
+    If verbose is not set, it will return the iteration depth.
+    """
+    if verbose:
+        unique, counts = np.unique(cluster_array, return_counts=True)
+        output_dict = {}
+        for idx, cluster in enumerate(unique):
+            output_dict[cluster] = [counts[idx]]
+    
+    # Setting some initial parameters changes in this sense reflects the amouot of groups that where considered
+    #  by the algortym, this is due to the fact that a non-changed group returns a 0 and this also ends up in the
+    #  list. If no group are left which return either 0 or an atomgroup, the changes are 0.
+    start_cutoff = cutoff
+    cutoffs = []
+    changes = []
+    old_change = 0
+    change = -1
+    leftovers = -1
+    counter = 0
+    stop = 0
+    
+    while stop != max_stop and leftovers != 0:
+        # Perform force clustering for each non clustered residue in the ref_atomgroup
+        changed_cluster_array_indices, leftovers = force_clustering(ref_atomgroup, cutoff, 
+                                                                    cluster_array, possible_clusters)
+        # Some bookkeeping for proper quality control
+        if verbose:
+            unique, counts = np.unique(cluster_array, return_counts=True)
+            temp_dict = dict(zip(unique, counts))
+            cutoffs.append(cutoff)
+            for key in temp_dict:
+                output_dict[key].append(temp_dict[key])
+        
+        # Calculate the amount of changes
+        change = len(changed_cluster_array_indices)
+        
+        # If nothing has changed, increment the cutoff and start the death counter 
+        if change == old_change:
+            if (cutoff + cutoff_increment) <= max_cutoff:
+                cutoff += cutoff_increment
+            stop += 1
+        # If something has changed, move to intial cutoff and reset death counter
+        else:
+            cutoff = start_cutoff
+            stop = 0
+            
+        # Updating change
+        old_change = change
+        changes.append(change)
+        counter += 1
+    
+    if verbose:
+        return output_dict, cutoffs, changes
+    else:
+        return counter
 
 # The 3d example of a very clear more set oriented neighbour clustering
 #@profile
@@ -414,14 +533,6 @@ def set_clustering(explicit_matrix, exclusion_mask=False, span=1,
     if verbose:
         print('It took {} to cluster {} clusters \
 with a total of {} points'.format(stop-start, len(clusters), len(positions)))
-        
-    # incorporating the cutoff condition for minimum segment size, this could
-        # be moved so it doesn't require one extra loop, but its only done 
-        # once per frame so we should be ok.
-#    if min_cluster_size > 0:
-#        for cluster in clusters.keys():
-#            if len(clusters[cluster]) < min_cluster_size:
-#                clusters.pop(cluster)
             
     return clusters
 
