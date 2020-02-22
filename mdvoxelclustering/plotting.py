@@ -80,7 +80,7 @@ for key, value in plottingdata.items():
       
 
 
-plt.show()
+
 plt.savefig('bababoem.png')
 
 #plt.bar(time, ordered_clusters, align='center')
