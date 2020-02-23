@@ -3,10 +3,14 @@ import matplotlib.pyplot as plt
 import pickle
 from matplotlib.collections import LineCollection
 
+my_dpi = 300
 scale = 0.01
 with open('cluster_mutations.pickle', 'rb') as handle:
     cluster_mutations = pickle.load(handle)
+with open('n_clusters.pickle', 'rb') as handle:
+    n_clusters = pickle.load(handle)
 
+n_clusters = n_clusters
 
 with open('visualization_data.pickle', 'rb') as handle:
     visualization_data = pickle.load(handle)
@@ -29,9 +33,10 @@ for key, value in cluster_mutations.items():
 
 
 fig, ax = plt.subplots()
-ax.set_xlim(0,10)
+ax.set_xlim(0,6)
 ax.set_ylim(0,len(visualization_data))
-
+ax.set_xticks(range(1,6))
+ax.set_aspect
 thicknessratio = 0
 for value in visualization_data[0]:
     thicknessratio += value[1]
@@ -46,6 +51,8 @@ for key, value in visualization_data.items():
 
 
 for key, value in plottingdata.items():
+    if key == 0:
+        continue
     for linedata in value:
         y = np.linspace(linedata[1][0],linedata[1][1],linedata[1][1] - linedata[1][0] ,False, dtype = int)
         x = np.linspace(linedata[0][0],linedata[0][1],abs(linedata[0][1] - linedata[0][0]) ,False, dtype = int)
@@ -68,17 +75,17 @@ for key, value in plottingdata.items():
                     print(thickness[linedata[1][0]][(linedata[0][0]-2)])
                     print(linedata[0],linedata[1])
                     print(linedata[1][0])
-#            for i in x:
-#                points.append([(i,linedata[1][0]),(i+1,linedata[1][0])])
-#                if thickness[linedata[1][0]][linedata[0][0]]/thicknessratio == 0:
-#                    linethickness.append(0.000000001)
-#                else: 
-#                    linethickness.append(thickness[linedata[1][0]][linedata[0][0]]/thicknessratio)
+
+    #            for i in x:
+    #                points.append([(i,linedata[1][0]),(i+1,linedata[1][0])])
+    #                if thickness[linedata[1][0]][linedata[0][0]]/thicknessratio == 0:
+    #                    linethickness.append(0.000000001)
+    #                else: 
+    #                    linethickness.append(thickness[linedata[1][0]][linedata[0][0]]/thicknessratio)
 
 
-        
-      
-
+            
+          
 
 
 plt.savefig('bababoem.png')

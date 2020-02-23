@@ -147,3 +147,47 @@ def deprecated_dict():
             8 : {'b7','b8','b9'}
     }
     return deprecated_dict
+
+
+@pytest.fixture  
+def bilayerdict():
+    cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
+  
+    bilayerdict = {
+            0 : set(),
+            1 : cluster1,}
+    return bilayerdict
+
+
+@pytest.fixture  
+def deprecated_bilayer_dict():   
+    deprecated_bilayer_dict = {
+            2 : {'b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
+    }
+    return deprecated_bilayer_dict
+
+@pytest.fixture 
+
+def frame_bilayer():
+    cluster0 = set()
+    cluster11 ={'a1','a2','a3','a4','a5','a6','a7','a8','a9'}
+    cluster12 = {'b1','b2','b3','b4','b5','b6','b7','b8','b9','b10','a10'}
+    bilayer_frame = deque([cluster0,cluster11,cluster12])
+    return bilayer_frame
+
+@pytest.fixture 
+
+def zerodict():
+    cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','b1','b2','b3','b4','b5','b6','b7'}
+  
+    zerodict = {
+            0 : {'b8','b9','b10'},
+            1 : cluster1,}
+    return zerodict
+
+@pytest.fixture  
+
+def frame_zero():
+    cluster0 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
+    zero_frame = deque([cluster0])
+    return zero_frame    
