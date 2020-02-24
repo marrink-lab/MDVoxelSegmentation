@@ -7,4 +7,5 @@ from . import clustering
 from . import leaflets
 from . import settests
 from . import antidisco
+from . import graphing
 #from . import identity
