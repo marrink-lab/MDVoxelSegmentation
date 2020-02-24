@@ -35,38 +35,45 @@ Features
     - Complex lipids formulations including cholesterol
     - Proteins
     - Up to millions of beads in seconds per frame
-
 Instructions
 --------
-### Setting up our input file for CG leaflet segmentation
-Example files for leaflet clustering and VMD visualization can be found in the `example_inputs` folder.
+Some short instructions on using the example files on a CG lipid containing systems.
 
-The basic is that we set the correct path to 'our.tpr and 'our.gro'/'our.xtc' in the 'clustering_input.py' file. This is best done by making a copy of this file into an anlysis direcotry. The paths are set directly at the top of the file. 
-
-If working on a virtual environment it is important to have mdvoxelclustering installed there. This can be done by 
-writing the comand below in the mdvoxelclusterint repository folder. The '-e' is for editable install, which allows you to make changed in the library and python will actually check for thos.
+Installation
+************
+The '-e' is for editable install, which allows you to make changed in the library and python will actually check for those.
 
 pip install -e .
 
-### Running the segmentation and creating sensible output
+Setting up our input file for CG leaflet segmentation
+******************************************************
+Example files for leaflet clustering and VMD visualization can be found in the `example_inputs` folder.
+
+The basic is that we set the correct path to 'our.tpr and 'our.gro'/'our.xtc' in the 'clustering_input.py' file. This is best done by making a copy of this file into an anlysis direcotry. The paths are set directly at the top of the file. We also need to set the amount of threads we want to use, by default this is set to 12. The trajectory should contain at least as many frames as the amount of threads we set. Multithreading for now is just chunking your trajectory in pieces and handling them independently. Therefore memory consumption roughly scales linear with the amount of threads.
+
+Running the segmentation and creating sensible output
+******************************************************
 If 'mdvoxelclustering' is installed in our local python3 environment, we can run the clustering by executing the 'clustering_input.py' in our terminal:
 
 python clustering_input.py
 
 In the bottom of the 'clustering_input.py' we can see why this works. The input_file itself runs the necessary python functions to perform leaflet segmentation and then improves the raw output by running a consistent id algorithm. Finally our segments will be plotted in 'clusters_over_time.png' as a graph and stored in 'clusters_ordered.npy' as a compressed numpy array. Some other files are created which are mainly used for plotting right now. You do not need to worry about those for now and just take a look at the created graph. Maybe you can already spot what is going on. The graph is a walking average of the cluster atom count, where grey lines indicate interactions between segments. The hue of the vertical line indicates the relative amount of particles in the system which participate in that interaction.
 
-### VMD visualization
+VMD visualization
+******************
 For futher visualization in VMD we need to add 'our.gro' and 'our.xtc' path to 'vmd_clusters_visualization.py'. These entries are somehwere halfway the file... (sorry). We also need to make sure that we have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this our yourself, though I asked the developers to support anyone asking for such compilation and they said yes! So just send a mail to the VMD mailing list if you would need it. All we now need to type is:
 
 vmd -e vmd_clusters_visualization.vmd
 
 Our first 32 segments will automatically be assigned a color and material. They can be used to make selection using 'user your_segment' in the VMD selection syntax. By typing 'hide' in the VMD terminal, one can easily turn off all segment representations. Segment 0 always contains everything which was not assigned a segment. 'user' 32 always shows segment 32 to 1000, to show all segments which might have a very high index. The downside is that all segments from 32 onwards have the same color.
 
-### Post some feedback in our issues
+Post some feedback in our issues
+*********************************
 We would love to see how you used MDVoxelClustering in your projects and are always happy to see cool systems and screenshots. Just upload them to an issue of this repository. Of course there is also place for comments on usability and bugs. 
 
-## How to join?
-If you are interested in joining this project after its initial release just post an issue, or better yet, send an email to b.m.h.bruininks@gmail.com. We are currently still filled with ideas to be implemented and all hands are welcome. Some of the open topics are in the issues.
+How to contribute
+******************
+If you are interested in joining this project after its initial release just post an issue, or better yet, send an email to b.m.h.bruininks@gmail.com. We are currently still filled with ideas to be implemented and all hands are welcome. Some of the open topics are in the issues. Anybody who contributes for a fair share will of course be included in future publications.
 
 Examples
 ---------
@@ -87,6 +94,8 @@ The leaflet assignment seemed to have worked correctly, however, we do see some 
 
 Credits
 ---------
+Bart M. H. Bruininks
+Albert Thie
 
 Tools used in rendering this package:
 
