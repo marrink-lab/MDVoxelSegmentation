@@ -43,7 +43,11 @@ Some short instructions on using the example files on a CG lipid containing syst
 
 Installation
 ************
-The '-e' is for editable install, which allows you to make changes in the library, now python will actually check for those.
+Fork the development branch using:
+
+git clone [branch_clone_url]
+
+Then move into the cloned folder and type:
 
 pip install -e .
 
