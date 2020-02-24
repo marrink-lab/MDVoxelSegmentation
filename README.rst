@@ -89,7 +89,7 @@ The two leaflets of the plasmamembrane are clearly assigned correctly and depict
 .. image:: https://user-images.githubusercontent.com/1488903/61181667-b90cbb00-a629-11e9-9fc0-b2d52e4eaa93.png
 **Leaflet clustering of a plasma membrane including multiple proteins.**
 
-The leaflet assignment seemed to have worked correctly, however, we do see some noise in places where we wouldn't expect it at first sight and this behaviour is to be further inspected. For clustering a resolution of 1 nm and forced clustering within 2 nm was used. The protein was used as exclusion to prevent flopping lipids next to proteins to intervene with the leaflet assignment. In total 1.3 millions beads were clustered in less than a minute on a desktop.
+The issue described is not present anymore in the new clustering, however we are still working on the final figures for the paper. We can promise you this issue has been completely resolved and less than 30 lipids remain unassigned of the roughly 1 million present. The leaflet assignment seemed to have worked correctly, however, we do see some noise in places where we wouldn't expect it at first sight and this behaviour is to be further inspected. For clustering a resolution of 1 nm and forced clustering within 2 nm was used. The protein was used as exclusion to prevent flopping lipids next to proteins to intervene with the leaflet assignment. In total 1.3 millions beads were clustered in less than a minute on a desktop.
 
 Credits
 ---------
