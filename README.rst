@@ -45,11 +45,11 @@ Installation
 ************
 Fork the development branch using:
 
-git clone [branch_clone_url]
+`git clone [branch_clone_url]`
 
 Then move into the cloned folder and type:
 
-pip install -e .
+`pip install -e .`
 
 Setting up our input file for CG leaflet segmentation
 ******************************************************
@@ -61,7 +61,7 @@ Running the segmentation and creating sensible output
 ******************************************************
 If 'mdvoxelclustering' is installed in our local python3 environment, we can run the clustering by executing the 'clustering_input.py' in our terminal:
 
-python clustering_input.py
+`python clustering_input.py`
 
 In the bottom of the 'clustering_input.py' we can see why this works. The input_file itself runs the necessary python functions to perform leaflet segmentation and then improves the raw output by running a consistent id algorithm. Finally our segments will be plotted in 'clusters_over_time.png' as a graph and stored in 'clusters_ordered.npy' as a compressed numpy array. Some other files are created which are mainly used for plotting right now. You do not need to worry about those for now and just take a look at the created graph. Maybe you can already spot what is going on. The graph is a walking average of the cluster atom count, where grey lines indicate interactions between segments. The hue of the vertical line indicates the relative amount of particles in the system which participate in that interaction.
 
@@ -69,7 +69,7 @@ VMD visualization
 ******************
 For futher visualization in VMD we need to add 'our.gro' and 'our.xtc' path to 'vmd_clusters_visualization.py'. These entries are somehwere halfway the file... (sorry). We also need to make sure that we have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this our yourself, though I asked the developers to support anyone asking for such compilation and they said yes! So just send a mail to the VMD mailing list if you would need it. All we now need to type is:
 
-vmd -e vmd_clusters_visualization.vmd
+`vmd -e vmd_clusters_visualization.vmd`
 
 Our first 32 segments will automatically be assigned a color and material. They can be used to make selection using 'user your_segment' in the VMD selection syntax. By typing 'hide' in the VMD terminal, one can easily turn off all segment representations. Segment 0 always contains everything which was not assigned a segment. 'user' 32 always shows segment 32 to 1000, to show all segments which might have a very high index. The downside is that all segments from 32 onwards have the same color.
 
