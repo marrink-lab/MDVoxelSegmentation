@@ -22,7 +22,7 @@ This software has been developed to allow for a higher selection syntax than ato
 
 Features
 --------
-* v0.9 is an alpha build and should be used with extreme care!
+* v0.9 is a beta build and visualization should be checked by eye. High throughput is not adviced yet.
 * Voxel based neighbour clustering under cubic periodic boudaries
 * Fast contour clustering
 * Compatible with most MD file formats due to its tight link to MDAnalysis
@@ -33,7 +33,8 @@ Features
     - Inverted hexagonal phase
     - Membrane thethers
     - Complex lipids formulations including cholesterol
-    - Up to millions of beads in seconds
+    - Proteins
+    - Up to millions of beads in seconds per frame
 
 Examples
 --------
