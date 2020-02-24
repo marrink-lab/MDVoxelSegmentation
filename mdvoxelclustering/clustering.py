@@ -8,7 +8,6 @@ import copy
 import time
 import itertools
 from shutil import copyfile
-from collections import Counter
 
 # Make sure we take PBC into account
 mda.core.periodic = True
@@ -41,11 +40,13 @@ def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic',
     scaling = mod_dimensions[0]/(dimensions/resolution)
     max_error = np.max(np.absolute(scaling-1))
     if max_error > max_offset:
-        raise ValueError("A scaling artifact has occured of more than 5%, {}% "
-                         "deviation from the target resolution in frame {} was "
-                         "detected. You could consider increasing the "
-                         "resolution.".format(np.abs(scaling-1)*100, 
-                    atomgroup.universe.trajectory.frame))
+        raise ValueError(
+            'A scaling artifact has occured of more than 5%, {}% '
+            'deviation from the target resolution in frame {} was '
+            'detected. You could consider increasing the '
+            'resolution.'.format(np.abs(scaling-1)*100, 
+            atomgroup.universe.trajectory.frame),
+            )
     scaled_positions = ((positions * scaling) / resolution).astype(int)
   
     # fixing cubic PBC
@@ -162,8 +163,7 @@ def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0,
                 for voxel in voxel_list]
     indices = np.concatenate(indices).astype('int')
     if frames == 0 and not hyper_res:
-        assert np.unique(indices).shape == indices.shape, 'Indices should \
-appear only once.'
+        assert np.unique(indices).shape == indices.shape, 'Indices should appear only once.'
     return atomgroup.universe.atoms[indices]
 
 
@@ -218,8 +218,9 @@ def blur_matrix(matrix, span=0, PBC='cubic'):
                     blurred_matrix += np.roll(blurred_matrix, -(shift+1), 
                                               current_axis)
     else:
-        raise ValueError('Blur matrix only supports cubic periodic boundary \
-conditions.')
+        raise ValueError(
+            'Blur matrix only supports cubic periodic boundary conditions.'
+            )
     return blurred_matrix.astype(bool)
    
     
@@ -263,15 +264,17 @@ def find_neighbours(position, dimensions, span=1):
 #@profile
 def non_clustered_atomgroup(atomgroup, cluster_array):
     """
-    Takes an atomgroup and a cluster array of same size (2D array) and returns an
-    atomgroup containing all atoms in the atomgroup which have cluster 0 assigned in the
-    cluster array.
+    Takes an atomgroup and a cluster array of same size (2D array) and returns 
+    an atomgroup containing all atoms in the atomgroup which have cluster 0 
+    assigned in the cluster array.
     """
-    # Find the non-clustered indices only for the headgroups with respect to the headgroup indices
+    # Find the non-clustered indices only for the headgroups with respect to 
+    #  the headgroup indices
     non_clustered_indices = cluster_array[atomgroup.ix] == 0
     
-    # Obtaining the atomgroup for which we have to perform a neighbourhood search with a certain cutoff.
-    non_clustered_atomgroup = atomgroup[non_clustered_indices] # this returns an atomgroup
+    # Obtaining the atomgroup for which we have to perform a neighbourhood 
+    #  search with a certain cutoff. This returns an atomgroup.
+    non_clustered_atomgroup = atomgroup[non_clustered_indices] 
     
     return non_clustered_atomgroup
 
@@ -292,14 +295,14 @@ def find_key_with_max_value(dictionary):
     # Find the maximum value
     max_value = dictionary[keys[values.index(max(values))]]
     # Find all keys with the maximum value
-    max_keys = [keys for keys, values in dictionary.items() if values == max_value]
+    max_keys = [keys for keys, values in dictionary.items() if 
+                values == max_value]
     # Only return a hit if the maximum value is unique
     if len(max_keys) == 1:
         #TODO Maybe implement this in a nice manner I have to think about this
         for value in values:
             if max_value == value:
                 continue
-            #print('\n\n\n max_value - value = {}'.format(max_value - (value + min_diff)))
             if max_value <= value + min_diff:
                 break
         else:
@@ -311,17 +314,18 @@ def find_key_with_max_value(dictionary):
 def find_dominant_neighbour_cluster(ref_atomgroup, query_atomgroup, cutoff, 
                                     cluster_array, possible_clusters):
     """
-    Uses the query_atomgroup to perform a neighbour search and find the dominant cluster 
-    (if there is one) for a the residues of the atoms in the query_atomgroup. 
-    If there is no unique dominant cluster, the function returns 0.
-    If there are cluster_array indices to alter, it will return the query_atomgroup. The possible cluster
-    can be given to prevent searching for it in each iteration.
-    """
-    # Performing a distance search with a certain cutoff for a non clustered headgroup.
-    # Creating the bounding box for PBC search
-    # Setting the reference atomgroup for the search, excluding the self particles.
-    ref = mda.lib.NeighborSearch.AtomNeighborSearch(ref_atomgroup - query_atomgroup,
-                                                    ref_atomgroup.dimensions )
+    Uses the query_atomgroup to perform a neighbour search and find the 
+    dominant cluster (if there is one) for a the residues of the atoms in 
+    the query_atomgroup. If there is no unique dominant cluster, the function 
+    returns 0. If there are cluster_array indices to alter, it will return 
+    the query_atomgroup. The possible cluster can be given to prevent 
+    searching for it in each iteration.
+    """ 
+    # Setting the reference atomgroup for the search, excluding the 
+    #  self particles.
+    ref = mda.lib.NeighborSearch.AtomNeighborSearch(
+        ref_atomgroup - query_atomgroup, ref_atomgroup.dimensions,
+        )
     # Performing the neighbourhood search with a cutoff of 10 Angstrom
     hits = ref.search(query_atomgroup, cutoff, 'A') # A is for Angstrom
     # Obtaining the cluster value for each hit if there is a hit at all.
@@ -350,14 +354,17 @@ def find_dominant_neighbour_cluster(ref_atomgroup, query_atomgroup, cutoff,
 #@profile
 def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
     """
-    Assigns a clusters to all non clustered residues with a shared atom in the query_atomgroup in the cluster
-    array. The cluster ID is only changed if there is a dominant cluster around the atom in the query_atomgroup
-    within a certain cutoff (no unique max --> no reassignment). The changes to the cluster array are made in
-    place, the funtion will return an empty list if it performed no alterations in the cluster_array 
-    and a list containing all clustered atomgroups, it also returns the leftover atoms. 
+    Assigns a clusters to all non clustered residues with a shared atom in the 
+    query_atomgroup in the cluster array. The cluster ID is only changed if 
+    there is a dominant cluster around the atom in the query_atomgroup within 
+    a certain cutoff (no unique max --> no reassignment). The changes to the 
+    cluster array are made in place, the funtion will return an empty list if
+    it performed no alterations in the cluster_array and a list containing all
+    clustered atomgroups, it also returns the leftover atoms. 
     
-    All changes are made at once to make the fairest dominant cluster assignment and prevent order dependency 
-    for the dominant cluster. An array of possble cluster can be specified to prevent recalculation
+    All changes are made at once to make the fairest dominant cluster 
+    assignment and prevent order dependency for the dominant cluster. An array
+    of possble cluster can be specified to prevent recalculation
     by putting np.unique(cluster_array) at the position of possible clusters.
     
     #TODO I should also make the query_atomgroup an input for it can take
@@ -367,15 +374,19 @@ def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
     query_atomgroup = non_clustered_atomgroup(ref_atomgroup, cluster_array)
     query_residuegroup = query_atomgroup.residues
     
-    # Try to make the changes and either still return an empy list or a list of (atomgroup, dominant_cluster) or
-    # simply an empty list for a failed case.
+    # Try to make the changes and either still return an empy list or a list 
+    #  of (atomgroup, dominant_cluster) or simply an empty list for a 
+    #  failed case.
     changes = []
     leftovers = 5
     for residue in query_residuegroup:
         active_atoms = residue.atoms & ref_atomgroup
-        temp_changes = find_dominant_neighbour_cluster(ref_atomgroup, active_atoms, cutoff, 
-                                                       cluster_array, possible_clusters)
-        # Only accept the change, if it returned non zero (the ouput for no change). Else add them to leftovers
+        temp_changes = find_dominant_neighbour_cluster(
+            ref_atomgroup, active_atoms, cutoff, 
+            cluster_array, possible_clusters,
+            )
+        # Only accept the change, if it returned non zero (the ouput for no 
+        #  change). Else add them to leftovers
         if temp_changes == 0:
             leftovers += 1
         else:
@@ -392,10 +403,11 @@ def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array,
                                possible_clusters, max_cutoff=20, max_stop=1, 
                                cutoff_increment=5, verbose=False):
     """
-    This performs an iterative force_clustering and stops when there is nothing changed.
-    It returns a tuple(3) of occupation of each cluster per iteration in a dict if verbose is set to true, as well as 
-    the dynamic cutoffs list and the leftovers list.
-    If verbose is not set, it will return the iteration depth.
+    This performs an iterative force_clustering and stops when there is 
+    nothing changed. It returns a tuple(3) of occupation of each cluster per 
+    iteration in a dict if verbose is set to true, as well as the dynamic 
+    cutoffs list and the leftovers list. If verbose is not set, it will return 
+    the iteration depth.
     """
     if verbose:
         unique, counts = np.unique(cluster_array, return_counts=True)
@@ -403,9 +415,11 @@ def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array,
         for idx, cluster in enumerate(unique):
             output_dict[cluster] = [counts[idx]]
     
-    # Setting some initial parameters changes in this sense reflects the amouot of groups that where considered
-    #  by the algortym, this is due to the fact that a non-changed group returns a 0 and this also ends up in the
-    #  list. If no group are left which return either 0 or an atomgroup, the changes are 0.
+    # Setting some initial parameters changes in this sense reflects the 
+    #  amouot of groups that where considered by the algortym, this is due to
+    #  the fact that a non-changed group returns a 0 and this also ends up in 
+    #  the list. If no group are left which return either 0 or an atomgroup, 
+    #  the changes are 0.
     start_cutoff = cutoff
     cutoffs = []
     changes = []
@@ -416,9 +430,12 @@ def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array,
     stop = 0
     
     while stop != max_stop and leftovers != 0:
-        # Perform force clustering for each non clustered residue in the ref_atomgroup
-        changed_cluster_array_indices, leftovers = force_clustering(ref_atomgroup, cutoff, 
-                                                                    cluster_array, possible_clusters)
+        # Perform force clustering for each non clustered residue in the 
+        #  ref_atomgroup.
+        changed_cluster_array_indices, leftovers = force_clustering(
+            ref_atomgroup, cutoff, 
+            cluster_array, possible_clusters,
+            )
         # Some bookkeeping for proper quality control
         if verbose:
             unique, counts = np.unique(cluster_array, return_counts=True)
@@ -430,12 +447,14 @@ def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array,
         # Calculate the amount of changes
         change = len(changed_cluster_array_indices)
         
-        # If nothing has changed, increment the cutoff and start the death counter 
+        # If nothing has changed, increment the cutoff and start the death 
+        #  counter 
         if change == old_change:
             if (cutoff + cutoff_increment) <= max_cutoff:
                 cutoff += cutoff_increment
             stop += 1
-        # If something has changed, move to intial cutoff and reset death counter
+        # If something has changed, move to intial cutoff and reset death 
+        #  counter
         else:
             cutoff = start_cutoff
             stop = 0
@@ -586,7 +605,8 @@ def vmd_visualization_single_frame(template_file, clusters):
     print(np.unique(clusters))
     with open(full_target_path, 'a') as f:
         for cluster in np.unique(clusters):
-            f.write('\n\nset cluster{} [atomselect top "index '.format(cluster))
+            f.write('\n\nset cluster{} '
+                    '[atomselect top "index '.format(cluster))
             atom_indices = np.asarray(np.where(clusters == cluster))[0]
             print(atom_indices)
             for idx, element in enumerate(atom_indices):
@@ -605,8 +625,9 @@ if __name__=='__main__':
 4_adhesion/attached.gro')
     selection = data.select_atoms('resname DOPE DOTAP')
     start = time.time()
-    test_selection = data.select_atoms('(name PO4 NC3 NH3 CNO) and around 8 \
-(name C1A C1B C2A C2B C3A C3B C4A C4B D1A D1B D2A DB D3A D3B D4A D4B)')
+    test_selection = data.select_atoms(
+        '(name PO4 NC3 NH3 CNO) and around 8 (name C1A C1B C2A C2B C3A C3B '
+        'C4A C4B D1A D1B D2A DB D3A D3B D4A D4B)')
     print('The search query took {}'.format(time.time()-start))
     resolution = 1
 

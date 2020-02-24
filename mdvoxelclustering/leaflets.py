@@ -325,7 +325,12 @@ def leaflet_clustering(
     #TODO Remove the hard codedness here.
     if force:
         clus.iterative_force_clustering(
-            selection_headgroups_atomgroup.select_atoms('(name PO4 GL1 GL2 C1A C1B AM1 AM2 GM1 GM2 COO COOH) or (resname CHOL and name ROH) or (resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and name C1 C2 C3 P1 P2 P3)'), 
+            selection_headgroups_atomgroup.select_atoms(
+                '(name PO4 GL1 GL2 '
+                'C1A C1B AM1 AM2 GM1 GM2 COO COOH) or '
+                '(resname CHOL and name ROH) or '
+                '(resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and '
+                'name C1 C2 C3 P1 P2 P3)'), 
             int(force_cutoff*(2/3)), out_array, 
             np.unique(out_array), max_cutoff=force_cutoff, max_stop=20, 
             cutoff_increment=1, verbose=False)
@@ -537,7 +542,8 @@ settings. (An exmaple file should be made here)')
     print(clusters, len(clusters))
     
     print('Clustering took: {}'.format(time.time()-start))
-    #TODO Writing the output at once this should become a per frame write/append!
+    #TODO Writing the output at once this should become a per frame 
+    #  write/append!
     np.save(output_file, clusters.astype(bits))
 
     # Some basic plotting.
@@ -550,8 +556,8 @@ def main():
     try:
         import clustering_input as inp
     except ModuleNotFoundError:
-        print('There should be a file called clustering_input.py with needed\
-settings. (An exmaple file should be made here)')
+        print('There should be a file called clustering_input.py with needed '
+              'settings. (An exmaple file should be made here)')
         sys.exit()
     # Generating the universe.
     print('Reading trajectory...')

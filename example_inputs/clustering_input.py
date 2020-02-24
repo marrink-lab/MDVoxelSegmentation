@@ -1,114 +1,79 @@
-###############################################################################
-########### MDVoxel Clustering Beta input file Leaflets #######################
-###############################################################################
-###   All lines indicated as mandatory contain a variable which must be set. 
-### The other lines are just a another way of obtaining the needed selections
-### witout typing too much. Although they are also there to give an example
-### on how to tackle the more challenging selections you might want to make.
-###
-### For now it is hard coded that this file should be named:
-### clustering_input.py
-###############################################################################
-###############################################################################
+### Input files
+# you should be able to create a complete universe (mandatory)
+tpr = '../PROD/md.tpr'
+# the actual xtc or gro (mandatory)
+xtc = '../PROD/md.xtc'
 
-
-### Input files (mandatory).
-# You should be able to create a complete universe with residue information.
-tpr = 'md.tpr'
-# The actual xtc or gro
-xtc = 'centered_whole_trajout.xtc'
-
-
-### Output file (mandatory).
+### Output file
 output_file = 'clusters'
 
 
-### Full lipids (mandatory).
-# Specifying the lipid residue names and concatenating the list.
-lipids = ['DLPC', 'DLPS', 'DOPE', 'DOTAP', 'DYPC', 'DYPS',
-          'LYPC', 'LYPS', 'OA-1', 'OAOH']
-lipids_query = ' '.join(lipids)
-# Specifying the mda selection.
-lipids_selection_query = 'resname {}'.format(lipids_query) # (mandatory)
-
-
-### Tail of lipids (mandatory).
-# Specify the tail beads to take into account and concatenating the list.
-tails = ['C4A', 'C4B', 'D4A', 'D4B', 'C3A', 'C3B', 'D3A',
-         'D3B', 'D2A', 'D2B', 'C2A', 'C2B']
+### Tail of lipids
+# specify the tail beads to take into account and concatenating the list
+tails = ['D6A', 'D6B', 'C6A', 'C6B', 'C5A', 'C5B', 'D5A', 'D5B','C4A', 'C4B', 'D4A', 'D4B', 'C3A', 'C3B', 'D3A', 'D3B',]# 'D2A', 'D2B', 'C2A', 'C2B']
 tails_query = ' '.join(tails)
-# Specifying the mda selection.
-tails_selection_query = 'name {}'.format(tails_query) # (mandatory)
+# specifying the mda selection, this is mandatory to have!
+tails_selection_query = 'name {} or (resname CHOL XHOL and name C1)'.format(tails_query)
 
 
-### Headgroups selection (mandatory).
-# Specify the headgroups used to mask the lipid tail density.
-headgroups = ['PO4', 'NC3', 'CNO', 'NH3', 'TAP', 'GL1', 'GL2']
+### Headgroups selection
+# specify the headgroups used to mask the lipid tail density
+headgroups = ['COO', 'COOH', 'PO4', 'NC3', 'CNO', 'NH3', 'TAP', 'GL1', 'GL2', 'AM1', 'AM2', 'GM1', 'GM2', 'GM3', 'GM4', 'GM5', 'GM6', 'GM7', 'GM8', 'GM9', 'GM10', 'GM11', 'GM12, GM13', 'GM14', 'GM15', 'GM16', 'GM17']#, 'C1A', 'C1B', 'C2A', 'C2B', 'D1A', 'D1B', 'D2A', 'D2B']
 headgroups_query = ' '.join(headgroups)
-# Specifying the mda selection, set to false if not used (mandatory).
-headgroups_selection_query = 'name {}'.format(headgroups_query) # (mandatory)
-#headgroups_selection_query = False # Turns off the headgroups selection.
+# specifying the mda selection, set to false if not used (mandatory)
+headgroups_selection_query = 'name {} or (resname CHOL and name ROH) or (resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and name C1 C2 C3 P1 P2 P3)'.format(headgroups_query)
+#headgroups_selection_query = False
 
 
-### Exclusions selection (mandatory).
-# Specifying the exclusion selection and concatenating the list.
-#exclusions_selection = ['BB', 'SC1', 'SC2','SC3', 'SC4']
-#exclusions_query = ' '.join(exclusions_selection)
-# Specifying the mda selection, set to False to turn off exclusions. 
-#exclusions_selection_query = 'name {}'.format(exclusions_query) # (mandatory)
-# Turning off exclusions.
-exclusions_selection_query = False
+### Exclusions selection
+# specifying the exclusion selection and concatenating the list
+exclusions_selection = ['BB', 'SC1', 'SC2','SC3', 'SC4']
+exclusions_query = ' '.join(exclusions_selection)
+# specifying the mda selection, set to False to turn off exclusions. 
+# This is mandatory to have!
+exclusions_selection_query = 'name {}'.format(exclusions_query)
+# Turning off exclusions
+#exclusions_selection_query = False
 
+### verbose for testing
+verbose = False
 
-### Threads for running the clustering (set to computer core count).
-# reduce if you run out of memory. The amound of threads should be
-# smaller than the number of frames in question. (mandatory).
-threads = 12
+### start stop and skip
+start_frame = 0
+# Use non to set complete trajector
+stop_frame = None
+skip = 1
 
+# Setting the minimum size in particles for the cluster
+min_cluster_size = 50
 
-### Setting the aimed voxel size in nm (mandatory).
+### Setting the aimed voxel size in nm (mandatory) als has the frames
+# used for smearing in time (0 is no time smearing).
 resolution = 0.5
-
-
-### Hyper res blurs the positions for voxel mapping over
-# half the resolution. This is useful for high res CG clustering.
-# such as the tight packing of an inverted hexagonal phase (mandatory).
+frames = 0
 hyper_res = True
 
-
-### Setting foce lipid clustering by headgroup neighbourinvg clusters (mandatory).
+### force clustering of masked residues
 force = True
 force_cutoff = 20
 force_info = False
 
+### Threads
+threads = 10
 
-### Settting the scatterplot output (mandatory).
-plotting = False
-
-
-### Setting the reducting in points for plotting (mandatory).
-reduce_points = 19
-
-
-### Setting the amount of prints and test plots (mandatory).
-verbose = False
-
-
-### start/stop/skip set stop to None to go to end of file (mandatory).
-start_frame = 0
-stop_frame = None
+### Setting the trajectory skip size
 skip = 1
 
+### Settting the scatterplot output
+plotting = False
 
-### Extra frames for averaging over time (experimental, mandatory)
-frames = 0
+### Setting the reducting in points for plotting
+reduce_points = 1
 
 
-### Actually running the leaflet clustering my executing this file with python3.
 if __name__=='__main__':
     import mdvoxelclustering as mdv
-    # Run the position based leaflet clustering (outputs clusters.npy).	
-    #mdv.leaflets.main()
     mdv.leaflets.main_threaded()
-    # Run the clluster identity over time (outputs clusters_ordered.npy).
     mdv.settests.main()
+    mdv.antidisco.main()
+    mdv.graphing()
