@@ -15,7 +15,7 @@ MDVoxelClustering
 
 Using neighbour clustering in voxelspace for fast and consistant spatial and temporal clustering.
 
-This software has been developed to allow for a higher selection syntax than atom and or residue index. MDVoxelClustering combines nieghbour clustering with a voxel mask of set resolution (default 0.5 nm). Forced segmentation is turned on by default in assign particles to clusters if they were uncleastered within 2 nm. Finally there is a minimum cluster size of 50 particles to prevent clutter. For now the software has mainly been tested on CG Martini lipid assemblies with or without embedded proteins, though it probably works even better on atomistic simulations due to the higher amount of atoms that can be binned.
+This software has been developed to allow for a higher selection syntax than atom and or residue index. MDVoxelClustering combines nieghbour clustering with a voxel mask of set resolution (default 0.5 nm). Forced-segmentation is turned on by default and assigns particles to clusters if they were uncleastered within 2 nm in an iterative manner. Finally there is a minimum cluster size of 50 particles to prevent clutter. For now the software has mainly been tested on CG Martini lipid assemblies with or without embedded proteins, though it probably works even better on atomistic simulations due to the higher amount of atoms that can be binned. If working with atomistic systems, you can probably turn off hyper-resolution in the input file.
 
 * Open software: Apache 2 license
 
