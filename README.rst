@@ -91,6 +91,8 @@ The two leaflets of the plasmamembrane are clearly assigned correctly and depict
 
 The leaflet assignment seemed to have worked correctly, however, we do see some noise in places where we wouldn't expect it at first sight and this behaviour is to be further inspected. For clustering a resolution of 1 nm and forced clustering within 2 nm was used. The protein was used as exclusion to prevent flopping lipids next to proteins to intervene with the leaflet assignment. In total 1.3 millions beads were clustered in less than a minute on a desktop.
 
+.. image:: https://www.youtube.com/watch?v=WctZJuXdBZ4
+
 Credits
 ---------
 Bart M. H. Bruininks & Albert Thie
