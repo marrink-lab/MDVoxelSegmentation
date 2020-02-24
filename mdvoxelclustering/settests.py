@@ -207,7 +207,7 @@ def sort_clusters(data):
 
 
 def main():
-    data = np.load('clusterszero.npy')
+    data = np.load('clusters.npy')
     
     data, plotinfo, n_clusters = sort_clusters(data)
     

@@ -76,3 +76,4 @@ if __name__=='__main__':
     mdv.leaflets.main_threaded()
     mdv.settests.main()
     mdv.antidisco.main()
+    mdv.graphing.main()

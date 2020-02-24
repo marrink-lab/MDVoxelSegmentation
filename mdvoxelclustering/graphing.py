@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 import pickle
 
 
-def find_total_amount_of_particles(frame, hidden_clusters=[0]):
+def find_total_amount_of_particles(frame, cluster_sizes_data, hidden_clusters=[0]):
     """
     Finds the total amount of non-zero particles.
     """
     # Finding the total amount of particles
-    cluster_sizes_data[0]
     total_amount_of_particles = 0
     for cluster, count in cluster_sizes_data[0][frame]:
         if cluster in hidden_clusters:
@@ -71,7 +70,7 @@ def main():
     
     
     # Smooth the cluster atom count trajectories
-    N = 10
+    N = 20
     for cluster in range(highest_cluster+1):
         print('\rProcessing cluster {}/{} for running average.'.format(cluster, highest_cluster), end='')
         cluster_size_dict[cluster] = np.array(cluster_size_dict[cluster])
@@ -91,7 +90,6 @@ def main():
     # Plot all clusters
     hidden_clusters = [0]
     max_clusters = 20
-    counter = 0
     
     # Drawing the clusters
     fig, ax = plt.subplots()
@@ -124,7 +122,11 @@ def main():
             else:
                 y2 = cluster_size_dict[involved_cluster2][frame]
             # We draw the connection line thickness related to the involved amount of particles
-            total_amount_of_relevent_particles = find_total_amount_of_particles(frame, hidden_clusters)
+            total_amount_of_relevent_particles = find_total_amount_of_particles(
+                frame, 
+                cluster_sizes_data, 
+                hidden_clusters,
+                )
             intensity = 0.9-0.9*(y1/total_amount_of_relevent_particles)
             ax.plot([x1, x2], [y1, y2], linestyle='-', linewidth=1, color=str(intensity))
     
