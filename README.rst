@@ -19,6 +19,8 @@ This software has been developed to allow for a higher selection syntax than ato
 
 * Open software: Apache 2 license
 
+.. image:: https://user-images.githubusercontent.com/1488903/61180809-e43cdd80-a61c-11e9-91d7-7d13539c9c16.png
+
 Features
 --------
 * v0.9 is a beta build and visualization should be checked by eye. High throughput is not adviced yet. Exmple input files for CG lipid systems are supplied. They can be easily adapted to your system by quickly following the steps in the instructions.
