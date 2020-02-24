@@ -94,8 +94,7 @@ The leaflet assignment seemed to have worked correctly, however, we do see some 
 
 Credits
 ---------
-Bart M. H. Bruininks
-Albert Thie
+Bart M. H. Bruininks & Albert Thie
 
 Tools used in rendering this package:
 
