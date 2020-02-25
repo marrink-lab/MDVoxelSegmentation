@@ -98,6 +98,11 @@ The two leaflets of the plasmamembrane are clearly assigned correctly and depict
 
 Less than 30 lipids remain unassigned of the roughly 1 million present. The leaflet assignment seemed to have worked correctly. For clustering a resolution of 0.5 nm and iterative forced clustering within 2 nm was used. The protein was used as exclusion to prevent them acting as pores in our segmentation. In total 1.3 millions beads were clustered in 30 minutes on a desktop. Mainly the force clustering to assign all diving leaflets took a while. Keep in mind that this well never change the amount of segments present, so forced clustering could be skipped in many situations. This is also only making use of a single core (a single frame cannot be hypterthreaded in the current code).
 
+.. image:: https://user-images.githubusercontent.com/1488903/75272814-e3009f80-57fe-11ea-868d-29b1bd126c7a.png
+**A collection of notoriously hard bilayer bilayer problems for segmentation**
+
+For the cholesterol fli-flopping we use non iterative forced clustering (currently hard coded) with a cutoff of 1.5 nm to act as a deadzone of 1 nm (A, B, C). We see that intercalating close contact leaflets do not cause faulty segmentation (D, E). Pores are also handled correctly and the minimum pore size at a resolution of 0.5 nm is actually the pore itself (F/G). If the pore is only a water channel, but the lipids do not reorient, its not considered a pore. Since the leaflets are not even continous. In short we are able to detect all *toroidal* pores in a membrane. Water pores are a different game which we might solve in the future with a similar set based approach (ohh yhea we got something nice brewing, if only we had time :D).
+
 Credits
 ---------
 Bart M. H. Bruininks & Albert Thie
