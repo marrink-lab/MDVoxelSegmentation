@@ -45,11 +45,10 @@ Installation
 ************
 Fork the development branch using:
 
-
 :code:`git clone [branch_clone_url]`
 
-
 Then move into the cloned folder and type:
+
 :code:`pip install -e .`
 
 Setting up our input file for CG leaflet segmentation
