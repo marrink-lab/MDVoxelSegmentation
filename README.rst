@@ -67,11 +67,11 @@ In the bottom of the 'clustering_input.py' we can see why this works. The input_
 
 VMD visualization
 ******************
-For futher visualization in VMD we need to add 'our.gro' and 'our.xtc' path to 'vmd_clusters_visualization.py'. These entries are somehwere halfway the file... (sorry). We also need to make sure that we have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this our yourself, though I asked the developers to support anyone asking for such compilation and they said yes! So just send a mail to the VMD mailing list if you would need it. All we now need to type is:
+For futher visualization in VMD we need to add 'our.gro' and 'our.xtc' path to 'vmd_clusters_visualization.py'. These entries are somehwere halfway the file... (sorry). We also need to make sure that we have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this out yourself, though I asked the developers to support anyone asking for such compilation and they said yes! So just send an e-mail to the VMD mailing list if you would need it. If we have the right falvour of VMD, all we need to type next is:
 
 :code:`vmd -e vmd_clusters_visualization.vmd`
 
-Our first 32 segments will automatically be assigned a color and material. They can be used to make selection using 'user your_segment' in the VMD selection syntax. By typing 'hide' in the VMD terminal, one can easily turn off all segment representations. Segment 0 always contains everything which was not assigned a segment. 'user' 32 always shows segment 32 to 1000, to show all segments which might have a very high index. The downside is that all segments from 32 onwards have the same color.
+Our first 32 segments will automatically be assigned a color and material/style. They can be used to make selections using 'user your_segment' in the VMD selection syntax. These representations should automatically be set to update every frame. By typing 'hide' in the VMD terminal, we can easily turn off all segment representations. Segment 0 always contains everything which was not assigned a segment and is hidden. 'user' 32 always shows segment 32 to 1000, to show all segments which might have a very high index. The downside is that all segments from 32 onwards have the same color.
 
 Post some feedback in our issues
 *********************************
