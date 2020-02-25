@@ -75,11 +75,11 @@ Our first 32 segments will automatically be assigned a color and material/style.
 
 Post some feedback in our issues
 *********************************
-We would love to see how you used MDVoxelClustering in your projects and are always happy to see cool systems and screenshots. Just upload them to an issue of this repository. Of course there is also place for comments on usability and bugs. 
+We would love to see how you used MDVoxelClustering in your projects and are always happy to see cool systems and screenshots. Just upload them to an issue of this repository. There is also place for comments on usability and bugs. 
 
 How to contribute
 ******************
-If you are interested in joining this project after its initial release just post an issue, or better yet, send an email to b.m.h.bruininks@gmail.com. We are currently still filled with ideas to be implemented and all hands are welcome. Some of the open topics are in the issues. Anybody who contributes for a fair share will of course be included in future publications.
+If you are interested in joining this project after its initial release just post an issue, or better yet, send an email to b.m.h.bruininks@gmail.com. We are currently still filled with ideas to be implemented and all hands are welcome. Some of the open topics are in the issues. Anybody who contributes for a fair share will off course be included in future publications.
 
 Examples
 ---------
