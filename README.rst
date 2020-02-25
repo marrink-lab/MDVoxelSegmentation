@@ -86,17 +86,17 @@ Examples
 .. image:: https://user-images.githubusercontent.com/1488903/61180809-e43cdd80-a61c-11e9-91d7-7d13539c9c16.png
 **Clustering of the inverted hexagonal phase with four inner channels connected to a bilayer with a fusion stalk.**
 
-Inside the channels is a fragment of dsDNA. The leaflet clustering was performed using a resolution of 0.5 and hyperesolution turned on. This to allow for the correct clustering of the tight geometry of the channels in coarse grain data (Martini), also force clustering was turned on to have (almost?) every lipid assigned up to a distance of 2 nm.
+Inside the channels is a fragment of dsDNA. The leaflet clustering was performed using a resolution of 0.5 and hyperesolution turned on. This to allow for the correct clustering of the tight geometry of the channels in coarse grain data (Martini, we used hyper resolution for all CG data!), also force clustering was turned on to have (almost?) every lipid assigned up to a distance of 2 nm.
 
 .. image:: https://user-images.githubusercontent.com/1488903/61180812-f9b20780-a61c-11e9-838f-f42e54133669.png
 **Leaflet clustering of a complex plasmamembrane thether.**
 
-The two leaflets of the plasmamembrane are clearly assigned correctly and depicted as a transparent surface. The cholesterol inside the two leaflets is drawn in VDW spheres and their headgroups have a slightly altering colour. All cholesterol seems to be assigned correctly. Clustering was performed with a 1 nm resolution and forced clustering to assign (all?) the diving cholesterol up to a distance of 2 nm.
+The two leaflets of the plasmamembrane are clearly assigned correctly and depicted as a transparent surface. The cholesterol inside the two leaflets is drawn in VDW spheres and their headgroups have a slightly altering colour. All cholesterol seems to be assigned correctly. Clustering was performed with a 0.5 nm resolution and iterative forced clustering to assign the diving cholesterol up to a distance of 2 nm.
 
-.. image:: https://user-images.githubusercontent.com/1488903/61181667-b90cbb00-a629-11e9-9fc0-b2d52e4eaa93.png
+.. image:: https://user-images.githubusercontent.com/1488903/75271704-e7c45400-57fc-11ea-896a-60f0e2718f0d.png
 **Leaflet clustering of a plasma membrane including multiple proteins.**
 
-The issue described is not present anymore in the new clustering v0.9, however we are still working on the final figures for the paper. We can promise you this issue has been completely resolved and less than 30 lipids remain unassigned of the roughly 1 million present. The leaflet assignment seemed to have worked correctly, however, we do see some noise in places where we wouldn't expect it at first sight and this behaviour is to be further inspected. For clustering a resolution of 1 nm and forced clustering within 2 nm was used. The protein was used as exclusion to prevent flopping lipids next to proteins to intervene with the leaflet assignment. In total 1.3 millions beads were clustered in less than a minute on a desktop.
+Less than 30 lipids remain unassigned of the roughly 1 million present. The leaflet assignment seemed to have worked correctly. For clustering a resolution of 0.5 nm and iterative forced clustering within 2 nm was used. The protein was used as exclusion to prevent them acting as pores in our segmentation. In total 1.3 millions beads were clustered in 30 minutes on a desktop. Mainly the force clustering to assign all diving leaflets took a while. Keep in mind that this well never change the amount of segments present, so forced clustering could be skipped in many situations. This is also only making use of a single core (a single frame cannot be hypterthreaded in the current code).
 
 Credits
 ---------
