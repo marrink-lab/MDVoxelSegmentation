@@ -12,6 +12,21 @@ from shutil import copyfile
 # Make sure we take PBC into account
 mda.core.periodic = True
 
+
+def dim2lattice(x, y, z, alpha=90, beta=90, gamma=90):
+    """Convert dimensions (lengths/angles) to lattice matrix"""
+    cosa = np.cos( np.pi * alpha / 180 )
+    cosb = np.cos( np.pi * beta / 180 )
+    cosg = np.cos( np.pi * gamma / 180 )
+    sing = np.sin( np.pi * gamma / 180 )
+
+    zx = z * cosb
+    zy = z * ( cosa - cosb * cosg ) / sing
+    zz = np.sqrt( z**2 - zx**2 - zy**2 )
+
+    return np.array([x, 0, 0, y * cosg, y * sing, 0, zx, zy, wz]).reshape((3,3))
+
+
 def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic', 
                         max_offset=0.05):
     """
