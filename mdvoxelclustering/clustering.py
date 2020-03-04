@@ -141,7 +141,7 @@ def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
     if hyperres:
         # Blur coordinates 
         neighbors = hyperres * (np.mgrid[-1:2, -1:2, -1:2]).T.reshape((1, -1, 3))
-        coordinates = (voxels[:, None, :] + neighbors).reshape((-1, 3))
+        voxels = (voxels[:, None, :] + neighbors).reshape((-1, 3))
     voxels = voxels.astype(int)
         
     # Put everything in brick at origin
@@ -177,12 +177,12 @@ def gen_explicit_matrix(atomgroup, resolution=1, max_offset=0.05):
     # generating the mapping dictionary
     voxel2atom = collections.defaultdict(list)
     # atom index starts from 0 here and is the index in the array, not the
-    #  selection atom index in atom_select (these start from 1)
+    #  selection atom index in atom_select (these start from 1)    
     for idx, scaled_position in enumerate(voxels):
         x, y, z = scaled_position
         voxel2atom['x{}y{}z{}'.format(x, y, z)].append(
-                atomgroup.atoms[idx].ix)
-    
+                atomgroup.ix[idx])
+        
     return explicit, voxel2atom, nbox
 
 
