@@ -92,7 +92,7 @@ def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic',
         voxel2atom['x{}y{}z{}'.format(x, y, z)].append(
                 atomgroup.atoms[idx].ix)
     
-    return explicit, voxel2atom
+    return explicit, voxel2atom, nbox
 
 
 def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic', 
@@ -110,8 +110,8 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
     """
     # Starting the current frame
     current_frame = atomgroup.universe.trajectory.frame
-    explicit_matrix, voxel2atom = gen_explicit_matrix(atomgroup, resolution, 
-                                                      PBC, max_offset)
+    explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(atomgroup, resolution, 
+                                                            PBC, max_offset)
     
     if hyper_res:
         # this can be removed by making the mod positions smarter
@@ -130,16 +130,16 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
         for mod_value in mod_values:
             mod_positions = ref_positions + mod_value
             atomgroup.positions = mod_positions
-            temp_explicit_matrix, temp_voxel2atom = gen_explicit_matrix(
-                    atomgroup, resolution, PBC, max_offset
-                    )
+            temp_explicit_matrix, temp_voxel2atom, nbox = gen_explicit_matrix(
+                atomgroup, resolution, PBC, max_offset
+            )
             explicit_matrix += temp_explicit_matrix
             voxel2atom = {**voxel2atom, **temp_voxel2atom}
             
             # restoring the positions
             # this can be removed by making the mod positions smarter
             atomgroup.positions = ref_positions
-        return explicit_matrix, voxel2atom
+        return explicit_matrix, voxel2atom, nbox
     
     # Try to stack the densities, but could fail due to voxel amount mismatch
     #  due to pressure coupling and box deformations.
@@ -153,9 +153,9 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
         atomgroup.universe.trajectory[frame]
         # Smearing the positions for hyper res.
 
-        temp_explicit_matrix, temp_voxel2atom = gen_explicit_matrix(
-                    atomgroup, resolution, PBC, max_offset
-                    )
+        temp_explicit_matrix, temp_voxel2atom, nbox = gen_explicit_matrix(
+            atomgroup, resolution, PBC, max_offset
+        )
         try:
             explicit_matrix += temp_explicit_matrix
             #voxel2atom = {**voxel2atom, **temp_voxel2atom}
@@ -167,7 +167,7 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
     # Set the active frame back to the current frame    
     atomgroup.universe.trajectory[current_frame]
     
-    return explicit_matrix, voxel2atom
+    return explicit_matrix, voxel2atom, nbox
 
 
 def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0, 
@@ -654,8 +654,8 @@ if __name__=='__main__':
     resolution = 1
 
     start = time.time()
-    explicit_matrix, voxel2atom = gen_explicit_matrix(selection, 
-                                                      resolution = resolution)
+    explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(selection, 
+                                                            resolution = resolution)
     contour_matrix = gen_contour(explicit_matrix, 1, True)
     outer_contour_matrix = gen_contour(explicit_matrix, 1, False)
     print('Making the contour took {}.\nGenerating output '
