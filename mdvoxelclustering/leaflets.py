@@ -110,7 +110,7 @@ def contour_clustering(
     # calculating the contour mask
     contour_mask = clus.contour(explicit_matrix, nbox, span, inv)
     # clustering the contours
-    contour_clusters = clus.set_clustering(contour_mask, exclusion_mask)
+    contour_clusters = clus.set_clustering(contour_mask, nbox, exclusion_mask)
     #plot_voxels(contour_mask)
     return contour_clusters, voxel2atoms, explicit_matrix, contour_mask
 
@@ -141,7 +141,7 @@ def volume_clustering(
     )
     if headgroups_selection is not False:
         explicit_matrix[headgroups_selection] = False
-    volume_clusters = clus.set_clustering(explicit_matrix, exclusion_mask)
+    volume_clusters = clus.set_clustering(explicit_matrix, nbox, exclusion_mask)
     return volume_clusters, voxel2atoms, explicit_matrix
 
 
@@ -270,9 +270,9 @@ def leaflet_clustering(
         headgroups_mask[all_tails_mask &
                          headgroups_mask] = False
         # Clustering the masked headgroup densities.
-        headgroups_clusters = clus.set_clustering(headgroups_mask,
-                                                  exclusion_mask,
-                                                  )
+        headgroups_clusters = clus.set_clustering(
+            headgroups_mask, nbox, exclusion_mask
+        )
 
         if verbose:
             print('\nCurrent leaflet clusters: {}'.format(len(
