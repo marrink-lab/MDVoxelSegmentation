@@ -300,25 +300,24 @@ def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0,
 
 
 
-def find_neighbours(position, dimensions, span=1):
+def find_neighbours(position, box, span=1):
     """
     Uses the position to generate a a box width size span around the position.
     Taking cubic PBC into account.
     """
-    neighbours =  list(itertools.product(
-            range(position[0]-span, position[0]+span+1),
-            range(position[1]-span, position[1]+span+1),
-            range(position[2]-span, position[2]+span+1),
-            ))
-    # taking care of cubic PBC
-    if 0 in position or np.any(position >= dimensions-1):
-        for idx, neighbour in enumerate(neighbours):
-            neighbours[idx] = (neighbour[0]%dimensions[0], 
-                               neighbour[1]%dimensions[1], 
-                               neighbour[2]%dimensions[2])
-    return neighbours
+    s = slice(-span, span+1)
+    neighbours = np.mgrid[s, s, s].T.reshape((-1, 3)) + position
+    
+    if all(m > span-1 for m in position) and all(position < np.diagonal(box) - span):
+        # ... then we are done already
+        return [ tuple(v) for v in neighbours ]
 
+    # Put everything in brick at origin
+    for dim in (2, 1, 0):
+        shifts = neighbours[:, dim] // box[dim, dim]
+        neighbours -= shifts[:, None] * box[dim, :]
 
+    return [ tuple(v) for v in neighbours ]
 
 
 #@profile
@@ -531,7 +530,7 @@ def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array,
 
 # The 3d example of a very clear more set oriented neighbour clustering
 #@profile
-def set_clustering(explicit_matrix, exclusion_mask=False, span=1, 
+def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1, 
                    verbose=False, min_cluster_size = 0):
     """
     A set oriented neighbour voxel clustering.
@@ -580,7 +579,7 @@ def set_clustering(explicit_matrix, exclusion_mask=False, span=1,
     # the to do queue
     queue = set()
     # getting the perdic dimensions
-    dimensions = np.array(explicit_matrix.shape)
+    dimensions = np.diagonal(box)
     # as long as there are hits
     while len(positions_set) > 0:
         # start the first point and remove from the hits
@@ -588,8 +587,7 @@ def set_clustering(explicit_matrix, exclusion_mask=False, span=1,
         # add self as first to current cluster
         clusters[current_cluster] = [current_position]
         # find all neighbours of self taking cubic PBC into account
-        current_neighbours = find_neighbours(current_position, dimensions, 
-                                             span)
+        current_neighbours = find_neighbours(current_position, box, span)
         # add all neighbours to the queue if they are in the hits
         queue =  positions_set.intersection(current_neighbours)
         while len(queue) > 0:
@@ -600,8 +598,7 @@ def set_clustering(explicit_matrix, exclusion_mask=False, span=1,
             # add self to current cluster
             clusters[current_cluster].append(current_position)
             # find all neighbours of self taking cubic PBC into account
-            current_neighbours = find_neighbours(current_position, 
-                                                 dimensions, span)
+            current_neighbours = find_neighbours(current_position, box, span)
             # add all neighbours to the queue which are in the hits
             queue = queue.union(positions_set.intersection(current_neighbours))
         # move to next cluster
@@ -699,7 +696,7 @@ if __name__=='__main__':
     print('Making the contour took {}.\nGenerating output '
           'figures...'.format(time.time()-start))
     print('\nCLUSTERING 3, list based cubic boundary fix')
-    clusters = set_clustering(contour_matrix, exclusion_mask = False, 
+    clusters = set_clustering(contour_matrix, nbox, exclusion_mask = False, 
                               span = 1, verbose = True)
     plot_voxels(explicit_matrix)
     plot_voxels(contour_matrix)
