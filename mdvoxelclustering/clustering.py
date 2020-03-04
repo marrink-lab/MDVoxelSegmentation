@@ -27,6 +27,98 @@ def dim2lattice(x, y, z, alpha=90, beta=90, gamma=90):
     return np.array([x, 0, 0, y * cosg, y * sing, 0, zx, zy, zz]).reshape((3,3))
 
 
+def positive_linear_blur(array, box):
+    """
+    Perform simple line blurring of a matrix by rolling
+    one time in positive x, y, and z directions, correcting
+    for non-rectangular PBC.
+    """
+    blurred = np.copy(array)
+    # The box matrix is triangular
+    
+    # ... so a roll over x is just okay
+    blurred += np.roll(blurred, shift, axis=0)
+    
+    # ... but a roll over y may have an x-shift
+    #
+    xshift = shift * box[1, 0]
+    rolled = np.roll(array,  shift, 1)
+    rolled[:, 0, :] = np.roll(rolled[:, 0, :], -xshift, 0)
+    blurred += rolled
+    
+    # .. and a roll over z may have an x- and a y-shift
+    #
+    xyshift = shift * box[2, :2]
+    rolled = np.roll(array,  shift, 2)
+    rolled[:, :, 0] = np.roll(rolled[:, :, 0], xyshift, (0, 1))
+    blurred += rolled
+
+    return blurred
+
+
+def linear_blur(array, box, span, inplace=True):
+    """
+    Perform linear blurring of an array by rolling
+    over x, y, and z directions, for each value 
+    up to span. If inplace is True, the rolled 
+    array is equal to the target array, causing
+    a full blur.
+    """
+
+    blurred = np.copy(array)
+
+    if inplace:
+        other = blurred
+    else:
+        other = matrix
+        
+    for shift in range(1, span+1):
+        # The box matrix is triangular
+        
+        # ... so a roll over x is just okay
+        blurred += np.roll(other, shift, axis=0)
+        blurred += np.roll(other, -shift, axis=0)
+        
+        # ... but a roll over y may have an x-shift
+        #
+        xshift = shift * box[1, 0]
+        rolled = np.roll(other,  shift, 1)
+        rolled[:, 0, :] = np.roll(rolled[:, 0, :], -xshift, 0)
+        blurred += rolled
+        #
+        rolled = np.roll(other, -shift, 1)
+        rolled[:, -1, :] = np.roll(rolled[:, -1, :], xshift, 0)
+        blurred += rolled
+        
+        # .. and a roll over z may have an x- and a y-shift
+        #
+        xyshift = shift * box[2, :2]
+        rolled = np.roll(other,  shift, 2)
+        rolled[:, :, 0] = np.roll(rolled[:, :, 0], xyshift, (0, 1))
+        blurred += rolled
+        #
+        rolled = np.roll(other, -shift, 2)
+        rolled[:, :, -1] = np.roll(rolled[:, :, -1], -xyshift, (0, 1))
+        blurred += rolled
+    return blurred
+
+            
+def blur(array, box, span):
+    if span == -1:
+        blurred = positive_linear_blur(array, box)
+    elif span == 0:
+        blurred = linear_blur(array, box, -1, inplace=False)
+    else:
+        blurred = full_linear_blur(array, box, span)
+    return blurred
+
+
+def contour(array, box, span, inv=True):
+    if inv:
+        array = ~array
+    return blur(array, box, span).astype(bool) ^ array
+        
+
 def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
     box = dim2lattice(*atomgroup.dimensions)
     # The 10 is for going from nm to Angstrom
@@ -60,19 +152,18 @@ def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
     return voxels, nbox
 
 
-def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic', 
-                        max_offset=0.05):
+def gen_explicit_matrix(atomgroup, resolution=1, max_offset=0.05):
     """
-    Takes an atomgroup and bins it as close to the resolution as possible.
-    PBC is 'cubic' by default, but can be turned off. No other form of 
-    PBC is currently supported. If the offset of the actual resolution in
-    at least one dimension is more than by default 5%, the function will stop
-    and return an error specifying the actual offset in all dimensions plus
-    the frame in which the mapping error occured.
+    Takes an atomgroup and bins it as close to the resolution as
+    possible. If the offset of the actual resolution in at least one
+    dimension is more than by default 5%, the function will stop and
+    return an error specifying the actual offset in all dimensions
+    plus the frame in which the mapping error occured.
     
     Returns
     (array) 3d boolean with True for occupied bins
     (dictionary) atom2voxel mapping
+
     """
 
     voxels, nbox = voxelate_atomgroup(atomgroup, resolution, max_offset=max_offset)
@@ -95,7 +186,7 @@ def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic',
     return explicit, voxel2atom, nbox
 
 
-def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic', 
+def gen_explicit_matrix_multiframe(atomgroup, resolution=1,
                                    max_offset=0.05, frames=0, hyper_res=False):
     """
     Tries to add multiple explicit matrices and mappings together. This might
@@ -111,7 +202,7 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
     # Starting the current frame
     current_frame = atomgroup.universe.trajectory.frame
     explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(atomgroup, resolution, 
-                                                            PBC, max_offset)
+                                                            max_offset)
     
     if hyper_res:
         # this can be removed by making the mod positions smarter
@@ -131,7 +222,7 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
             mod_positions = ref_positions + mod_value
             atomgroup.positions = mod_positions
             temp_explicit_matrix, temp_voxel2atom, nbox = gen_explicit_matrix(
-                atomgroup, resolution, PBC, max_offset
+                atomgroup, resolution, max_offset
             )
             explicit_matrix += temp_explicit_matrix
             voxel2atom = {**voxel2atom, **temp_voxel2atom}
@@ -154,7 +245,7 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
         # Smearing the positions for hyper res.
 
         temp_explicit_matrix, temp_voxel2atom, nbox = gen_explicit_matrix(
-            atomgroup, resolution, PBC, max_offset
+            atomgroup, resolution, max_offset
         )
         try:
             explicit_matrix += temp_explicit_matrix
@@ -207,59 +298,6 @@ def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0,
                                                   frames, hyper_res))
     return atomgroups
 
-
-def blur_matrix(matrix, span=0, PBC='cubic'):
-    """
-    Blurs a 3d boolean matrix by adding the values which are within span range.
-    Default behaviour is using the inverse of the input matrix. This results in 
-    an inner smearing useful for generating the inner contour. The opisite is 
-    useful for generating the outer smearing for the outer contour. By default
-    it assumes cubic periodic boundary conditions. PBC can currently not be 
-    turned off.
-    
-    Returns the blurred boolean matrix.
-    """
-    blurred_matrix = copy.copy(matrix)
-    if PBC == 'cubic':
-        if span == -1:
-            for current_axis in range(3):
-                # blurring here is a positive line blur this is a feature and
-                # is extremely important for leaflet detection
-                blurred_matrix += np.roll(matrix, 1, current_axis)
-        if span == 0:
-            for current_axis in range(3):
-                # blurring here is a line blur this is a feature and
-                # is extremely important for leaflet detection
-                blurred_matrix += np.roll(matrix, 1, current_axis)
-                blurred_matrix += np.roll(matrix, -1, current_axis)
-        else:
-            for shift in range(span):
-                for current_axis in range(3):
-                    blurred_matrix += np.roll(blurred_matrix, shift+1, 
-                                              current_axis)
-                    blurred_matrix += np.roll(blurred_matrix, -(shift+1), 
-                                              current_axis)
-    else:
-        raise ValueError(
-            'Blur matrix only supports cubic periodic boundary conditions.'
-            )
-    return blurred_matrix.astype(bool)
-   
-    
-def gen_contour(matrix, span=1, inv=True):
-    """
-    Generatates the inner (inv = True), or outer (inv = False) contour of span 
-    around the 3d boolean matrix. Taking into account the first voxel
-    neighbours within span range.
-    
-    Returns the contour boolean matrix.
-    """
-    if inv:
-        blurred_matrix = blur_matrix(np.logical_not(matrix), span)
-        return blurred_matrix.astype(bool) ^ np.logical_not(matrix)
-    if not inv:
-        blurred_matrix = blur_matrix(matrix, span)
-        return blurred_matrix.astype(bool) ^ matrix
 
 
 def find_neighbours(position, dimensions, span=1):
@@ -656,8 +694,8 @@ if __name__=='__main__':
     start = time.time()
     explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(selection, 
                                                             resolution = resolution)
-    contour_matrix = gen_contour(explicit_matrix, 1, True)
-    outer_contour_matrix = gen_contour(explicit_matrix, 1, False)
+    contour_matrix = contour(explicit_matrix, nbox, 1, True)
+    outer_contour_matrix = contour(explicit_matrix, nbox, 1, False)
     print('Making the contour took {}.\nGenerating output '
           'figures...'.format(time.time()-start))
     print('\nCLUSTERING 3, list based cubic boundary fix')

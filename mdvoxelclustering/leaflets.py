@@ -108,7 +108,7 @@ def contour_clustering(
         hyper_res = False
     )
     # calculating the contour mask
-    contour_mask = clus.gen_contour(explicit_matrix, span, inv)
+    contour_mask = clus.contour(explicit_matrix, nbox, span, inv)
     # clustering the contours
     contour_clusters = clus.set_clustering(contour_mask, exclusion_mask)
     #plot_voxels(contour_mask)
@@ -185,13 +185,13 @@ def leaflet_clustering(
     #   in the clustering queue. Therefore they will act as a stop. 
     if exclusions_selection:
         # Protein volume mask.
-        explicit_matrix_exclusions = clus.gen_explicit_matrix_multiframe(
+        explicit_matrix_exclusions, _, nbox = clus.gen_explicit_matrix_multiframe(
             exclusions_selection, resolution, frames=frames, 
             hyper_res = hyper_res
-        )[0]
+        )
         # Protein contour (O) mask.
-        outward_contour_exclusions = clus.gen_contour(
-                explicit_matrix_exclusions, span=1, inv=False
+        outward_contour_exclusions = clus.contour(
+                explicit_matrix_exclusions, nbox, span=1, inv=False
                 )
         # Protein volume+contour(O) mask.
         exclusion_mask = np.logical_or(explicit_matrix_exclusions,
