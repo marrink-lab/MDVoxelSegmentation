@@ -178,10 +178,9 @@ def gen_explicit_matrix(atomgroup, resolution=1, max_offset=0.05):
     voxel2atom = collections.defaultdict(list)
     # atom index starts from 0 here and is the index in the array, not the
     #  selection atom index in atom_select (these start from 1)    
-    for idx, scaled_position in enumerate(voxels):
-        x, y, z = scaled_position
-        voxel2atom['x{}y{}z{}'.format(x, y, z)].append(
-                atomgroup.ix[idx])
+    for idx, voxel in enumerate(voxels):
+        #x, y, z = scaled_position
+        voxel2atom[tuple(voxel)].append(atomgroup.ix[idx])
         
     return explicit, voxel2atom, nbox
 
@@ -272,7 +271,7 @@ def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0,
     
     Returns an atomgroup.
     """
-    indices = [voxel2atom['x{}y{}z{}'.format(voxel[0], voxel[1], voxel[2])] 
+    indices = [voxel2atom[tuple(voxel)] 
                 for voxel in voxel_list]
     indices = np.concatenate(indices).astype('int')
     if frames == 0 and not hyper_res:
