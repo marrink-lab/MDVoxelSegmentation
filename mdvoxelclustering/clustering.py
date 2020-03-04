@@ -56,7 +56,7 @@ def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
     for dim in (2, 1, 0):
         shifts = voxels[:, dim] // nbox[dim, dim]
         voxels -= shifts[:, None] * nbox[dim, :]
-
+        
     return voxels, nbox
 
 
@@ -75,51 +75,24 @@ def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic',
     (dictionary) atom2voxel mapping
     """
 
-    # scaling from ansgtrom to nm
-    positions = atomgroup.positions/10
-    # obtaining the matrix raw dimensions
-    dimensions = atomgroup.dimensions[:3]/10
-    
-    # rounding the dimensions to the closest multiple of the resolution
-    mod_dimensions = np.array(divmod(dimensions, resolution))
-    mod_dimensions[1] = np.round(mod_dimensions[1]/resolution)
-    mod_dimensions[0] = mod_dimensions[0]+mod_dimensions[1]
-    
-    # scaling the matrix to the binning
-    scaling = mod_dimensions[0]/(dimensions/resolution)
-    max_error = np.max(np.absolute(scaling-1))
-    if max_error > max_offset:
-        raise ValueError(
-            'A scaling artifact has occured of more than 5%, {}% '
-            'deviation from the target resolution in frame {} was '
-            'detected. You could consider increasing the '
-            'resolution.'.format(np.abs(scaling-1)*100, 
-            atomgroup.universe.trajectory.frame),
-            )
-    scaled_positions = ((positions * scaling) / resolution).astype(int)
-  
-    # fixing cubic PBC
-    if PBC == 'cubic':
-        scaled_positions = scaled_positions % mod_dimensions[0]
-        
-    # making an empty explicit matrix
-    explicit_matrix = np.zeros((mod_dimensions[0].astype(int)),)
-    
-    # filling the explicit_matrix
-    scaled_positions = scaled_positions.astype('int')
-    explicit_matrix[scaled_positions[:,0], scaled_positions[:,1], 
-                    scaled_positions[:,2]] = 1
-    
+    voxels, nbox = voxelate_atomgroup(atomgroup, resolution, max_offset=max_offset)
+    # Using np.unique gives a small performance hit.
+    # Might still be necessary with large coordinate sets?
+    # unique = np.unique(voxels, axis=0)
+    x, y, z = voxels.T
+    explicit = np.zeros(np.diagonal(nbox), dtype=bool)
+    explicit[x, y, z] = True
+
     # generating the mapping dictionary
     voxel2atom = collections.defaultdict(list)
     # atom index starts from 0 here and is the index in the array, not the
     #  selection atom index in atom_select (these start from 1)
-    for idx, scaled_position in enumerate(scaled_positions):
+    for idx, scaled_position in enumerate(voxels):
         x, y, z = scaled_position
         voxel2atom['x{}y{}z{}'.format(x, y, z)].append(
                 atomgroup.atoms[idx].ix)
     
-    return explicit_matrix.astype(bool), voxel2atom
+    return explicit, voxel2atom
 
 
 def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic', 
