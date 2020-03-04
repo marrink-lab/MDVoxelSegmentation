@@ -24,7 +24,40 @@ def dim2lattice(x, y, z, alpha=90, beta=90, gamma=90):
     zy = z * ( cosa - cosb * cosg ) / sing
     zz = np.sqrt( z**2 - zx**2 - zy**2 )
 
-    return np.array([x, 0, 0, y * cosg, y * sing, 0, zx, zy, wz]).reshape((3,3))
+    return np.array([x, 0, 0, y * cosg, y * sing, 0, zx, zy, zz]).reshape((3,3))
+
+
+def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
+    box = dim2lattice(*atomgroup.dimensions)
+    # The 10 is for going from nm to Angstrom
+    nbox = (box / (10 * resolution)).round().astype(int) # boxels
+    unit = np.linalg.inv(nbox) @ box                     # voxel shape
+    error = unit - 10 * resolution * np.eye(3)           # error: deviation from cubic
+    deviation = (0.1 * (unit**2).sum(axis=1)**0.5 - resolution) / resolution
+
+    if (np.abs(deviation) > max_offset).any():
+        raise ValueError(
+            'A scaling artifact has occured of more than {}% '
+            'deviation from the target resolution in frame {} was '
+            'detected. You could consider increasing the '
+            'resolution.'.format(max_offset,
+            atomgroup.universe.trajectory.frame)
+        )
+
+    transform = np.linalg.inv(box) @ nbox                 # transformation to voxel indices
+    voxels = atomgroup.positions @ transform         
+    if hyperres:
+        # Blur coordinates 
+        neighbors = hyperres * (np.mgrid[-1:2, -1:2, -1:2]).T.reshape((1, -1, 3))
+        coordinates = (voxels[:, None, :] + neighbors).reshape((-1, 3))
+    voxels = voxels.astype(int)
+        
+    # Put everything in brick at origin
+    for dim in (2, 1, 0):
+        shifts = voxels[:, dim] // nbox[dim, dim]
+        voxels -= shifts[:, None] * nbox[dim, :]
+
+    return voxels, nbox
 
 
 def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic', 
@@ -41,6 +74,7 @@ def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic',
     (array) 3d boolean with True for occupied bins
     (dictionary) atom2voxel mapping
     """
+
     # scaling from ansgtrom to nm
     positions = atomgroup.positions/10
     # obtaining the matrix raw dimensions
