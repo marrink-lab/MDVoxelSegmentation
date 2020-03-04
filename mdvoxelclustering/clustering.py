@@ -152,7 +152,7 @@ def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
     return voxels, nbox
 
 
-def gen_explicit_matrix(atomgroup, resolution=1, max_offset=0.05):
+def gen_explicit_matrix(atomgroup, resolution=1, hyperres=False, max_offset=0.05):
     """
     Takes an atomgroup and bins it as close to the resolution as
     possible. If the offset of the actual resolution in at least one
@@ -166,7 +166,7 @@ def gen_explicit_matrix(atomgroup, resolution=1, max_offset=0.05):
 
     """
 
-    voxels, nbox = voxelate_atomgroup(atomgroup, resolution, max_offset=max_offset)
+    voxels, nbox = voxelate_atomgroup(atomgroup, resolution, hyperres, max_offset=max_offset)
     # Using np.unique gives a small performance hit.
     # Might still be necessary with large coordinate sets?
     # unique = np.unique(voxels, axis=0)
@@ -177,10 +177,13 @@ def gen_explicit_matrix(atomgroup, resolution=1, max_offset=0.05):
     # generating the mapping dictionary
     voxel2atom = collections.defaultdict(list)
     # atom index starts from 0 here and is the index in the array, not the
-    #  selection atom index in atom_select (these start from 1)    
-    for idx, voxel in enumerate(voxels):
-        #x, y, z = scaled_position
-        voxel2atom[tuple(voxel)].append(atomgroup.ix[idx])
+    #  selection atom index in atom_select (these start from 1)
+    if hyperres:
+        indices = np.repeat(atomgroup.ix, 27)
+    else:
+        indices = atomgroup.ix
+    for idx, voxel in zip(indices, voxels):
+        voxel2atom[tuple(voxel)].append(idx)
         
     return explicit, voxel2atom, nbox
 
@@ -198,38 +201,16 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1,
     (array) 3d boolean with True for occupied bins
     (dictionary) atom2voxel mapping
     """
+
+    if hyper_res:
+        return gen_explicit_matrix(
+            atomgroup, resolution, hyper_res, max_offset
+        )
+
     # Starting the current frame
     current_frame = atomgroup.universe.trajectory.frame
     explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(atomgroup, resolution, 
-                                                            max_offset)
-    
-    if hyper_res:
-        # this can be removed by making the mod positions smarter
-        ref_positions = np.copy(atomgroup.positions)
-        mod_values = list(itertools.product([-1, 0, 1], 
-                                            [-1, 0, 1], 
-                                            [-1, 0, 1],
-                                            ))
-        # removing the 000 entry for it is done by default.
-        mod_values.remove((0, 0, 0))
-        # scaling the mod_values with the resolution.
-        mod_values = np.array(mod_values, dtype=float)
-        mod_values *= (resolution/2)
-        
-        # generating the hyper res explicit matrix
-        for mod_value in mod_values:
-            mod_positions = ref_positions + mod_value
-            atomgroup.positions = mod_positions
-            temp_explicit_matrix, temp_voxel2atom, nbox = gen_explicit_matrix(
-                atomgroup, resolution, max_offset
-            )
-            explicit_matrix += temp_explicit_matrix
-            voxel2atom = {**voxel2atom, **temp_voxel2atom}
-            
-            # restoring the positions
-            # this can be removed by making the mod positions smarter
-            atomgroup.positions = ref_positions
-        return explicit_matrix, voxel2atom, nbox
+                                                            False, max_offset)
     
     # Try to stack the densities, but could fail due to voxel amount mismatch
     #  due to pressure coupling and box deformations.
