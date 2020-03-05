@@ -522,16 +522,11 @@ def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1,
     # removing the exclusion mask from the occupied voxel matrix
     if exclusion_mask is not False:
         explicit_matrix[exclusion_mask == True] = False
-    # finding all hits (occupied voxels)
-    positions = np.array(np.where(explicit_matrix == 1)).T
-    if verbose:
-        print('There are {} points to cluster.'.format(positions.shape[0]))
-    # initiating the empty set for all hits
-    positions_set = set()
+    # finding all hits (occupied voxels) and
     # adding each hit to the set as a tuple
-    for position in positions:
-        position = tuple(position)
-        positions_set.add((position))
+    positions_set = { pos for pos in zip(*np.where(explicit_matrix)) }
+    if verbose:
+        print('There are {} points to cluster.'.format(len(positions_set)))
     # stop timer for making the hits set (verbose)
     stop = time.time()
     if verbose:
@@ -541,9 +536,6 @@ def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1,
     #  the minute range.
     # beginning the timer for clustering (verbose)
     start = time.time()
-    # the range of the neighbour search (1 is direct neighbour including 
-    #  the diagonal)
-    span = 1
     # the starting cluster
     current_cluster = 1
     # output dictionary containing a list of hits per cluster
