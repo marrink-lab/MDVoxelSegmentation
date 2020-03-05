@@ -524,7 +524,7 @@ def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1,
         explicit_matrix[exclusion_mask == True] = False
     # finding all hits (occupied voxels) and
     # adding each hit to the set as a tuple
-    positions_set = { pos for pos in zip(*np.where(explicit_matrix)) }
+    pset = { pos for pos in zip(*np.where(explicit_matrix)) }
     if verbose:
         print('There are {} points to cluster.'.format(len(positions_set)))
     # stop timer for making the hits set (verbose)
@@ -540,32 +540,14 @@ def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1,
     current_cluster = 1
     # output dictionary containing a list of hits per cluster
     clusters = {}
-    # the to do queue
-    queue = set()
-    # getting the perdic dimensions
-    dimensions = np.diagonal(box)
     # as long as there are hits
-    while len(positions_set) > 0:
-        # start the first point and remove from the hits
-        current_position = positions_set.pop()
-        # add self as first to current cluster
-        clusters[current_cluster] = [current_position]
-        # find all neighbours of self taking cubic PBC into account
-        current_neighbours = find_neighbours(current_position, box, span)
-        # add all neighbours to the queue if they are in the hits
-        queue =  positions_set.intersection(current_neighbours)
-        while len(queue) > 0:
-            # obtain current neighbour and remove from queue
-            current_position = queue.pop()
-            # also remove current neighbour from the hits
-            positions_set.remove(current_position)
-            # add self to current cluster
-            clusters[current_cluster].append(current_position)
-            # find all neighbours of self taking cubic PBC into account
-            current_neighbours = find_neighbours(current_position, box, span)
-            # add all neighbours to the queue which are in the hits
-            queue = queue.union(positions_set.intersection(current_neighbours))
-        # move to next cluster
+    while pset:
+        clusters[current_cluster] = []
+        active = {pset.pop()}
+        while active:
+            around = { n for v in active for n in find_neighbours(v, box, span) }
+            clusters[current_cluster].extend(active)
+            active = { n for n in around if n in pset and not pset.remove(n) }
         current_cluster += 1
     # stopping the timer for clustering (verbose)
     stop = time.time()
