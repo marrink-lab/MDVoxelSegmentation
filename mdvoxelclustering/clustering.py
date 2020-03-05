@@ -241,8 +241,7 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1,
     return explicit_matrix, voxel2atom, nbox
 
 
-def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0, 
-                             hyper_res=False):
+def voxels2atomgroup(voxels, voxel2atom, atomgroup):
     """
     Converts the voxels in a voxel list back to an atomgroup.
     
@@ -252,16 +251,13 @@ def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0,
     
     Returns an atomgroup.
     """
-    indices = [voxel2atom[tuple(voxel)] 
-                for voxel in voxel_list]
-    indices = np.concatenate(indices).astype('int')
-    if frames == 0 and not hyper_res:
-        assert np.unique(indices).shape == indices.shape, 'Indices should appear only once.'
-    return atomgroup.universe.atoms[indices]
+    # It is not important that every index only occurs onec,
+    # as long as each atom is only selected once.
+    indices = { idx for v in voxels for idx in voxel2atom[tuple(v)] }
+    return atomgroup.universe.atoms[list(indices)]
 
 
-def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0, 
-                                hyper_res=False):
+def clusters2atomgroups(clusters, voxel2atom, atomgroup):
     """
     Converts the cluster in voxel space to an atomgroup.
     
@@ -270,14 +266,10 @@ def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0,
     
     Returns a list of atomgroups.
     """
-    atomgroups = []
-    for cluster in clusters:
-        voxel_list = clusters[cluster]
-        atomgroups.append(convert_voxels2atomgroup(voxel_list, 
-                                                  voxel2atom, atomgroup, 
-                                                  frames, hyper_res))
-    return atomgroups
-
+    return [
+        voxels2atomgroup(v, voxel2atom, atomgroup)
+        for c, v in clusters.items()
+    ]
 
 
 def find_neighbours(position, box, span=1):

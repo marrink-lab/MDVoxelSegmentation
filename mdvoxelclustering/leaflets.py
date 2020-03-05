@@ -223,12 +223,10 @@ def leaflet_clustering(
         plot_voxels(all_tails_mask)
 
     # Converting the voxel mask to selection atom indices.
-    tails_atomgroups = clus.convert_clusters2atomgroups(
+    tails_atomgroups = clus.clusters2atomgroups(
             tails_clusters,
             tails_mapping,
             selection_tails_atomgroup,
-            frames,
-            hyper_res,
             )
     # Using the atom indices to obtain residues in selection.
     tails_residuegroups = [
@@ -286,12 +284,10 @@ def leaflet_clustering(
         
         # Converting the voxel mask to selection atom indices with respect to 
         #  the universe.atoms.
-        leaflets_atomgroups = clus.convert_clusters2atomgroups(
+        leaflets_atomgroups = clus.clusters2atomgroups(
                 headgroups_clusters,
                 headgroups_mapping,
                 local_headgroupsatomgroup,
-                frames,
-                hyper_res,
                 )
         # Converting the atom indices in selection to residues in selection.
         leaflets_residuegroups = [
