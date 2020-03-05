@@ -61,7 +61,7 @@ def linear_blur(array, box, span, inplace=True):
     Perform linear blurring of an array by rolling
     over x, y, and z directions, for each value 
     up to span. If inplace is True, the rolled 
-    array is equal to the target array, causing
+    array is always the target array, causing
     a full blur.
     """
 
@@ -70,7 +70,7 @@ def linear_blur(array, box, span, inplace=True):
     if inplace:
         other = blurred
     else:
-        other = matrix
+        other = array
         
     for shift in range(1, span+1):
         # The box matrix is triangular
