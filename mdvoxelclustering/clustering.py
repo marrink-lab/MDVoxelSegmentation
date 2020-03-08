@@ -378,7 +378,7 @@ def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
     #  of (atomgroup, dominant_cluster) or simply an empty list for a 
     #  failed case.
     changes = []
-    leftovers = 5
+    leftovers = 0
     for residue in query_residuegroup:
         active_atoms = residue.atoms & ref_atomgroup
         temp_changes = find_dominant_neighbour_cluster(
