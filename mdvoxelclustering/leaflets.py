@@ -105,7 +105,7 @@ def contour_clustering(
             atomgroup, 
             resolution,
             frames=frames,
-            hyper_res = False
+            hyper_res = hyper_res
             )
     # calculating the contour mask
     contour_mask = clus.gen_contour(explicit_matrix, span, inv)
@@ -325,12 +325,12 @@ def leaflet_clustering(
     #TODO Remove the hard codedness here.
     if force:
         clus.iterative_force_clustering(
-            selection_headgroups_atomgroup.select_atoms(
+            selection_headgroups_atomgroup.universe.select_atoms(
                 '(name PO4 GL1 GL2 '
                 'C1A C1B AM1 AM2 GM1 GM2 COO COOH) or '
                 '(resname CHOL and name ROH) or '
                 '(resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and '
-                'name C1 C2 C3 P1 P2 P3)'), 
+                'name C1 C2 C3 P1 P2 P3) or (name BB)'), 
             int(force_cutoff*(2/3)), out_array, 
             np.unique(out_array), max_cutoff=force_cutoff, max_stop=20, 
             cutoff_increment=1, verbose=False)
