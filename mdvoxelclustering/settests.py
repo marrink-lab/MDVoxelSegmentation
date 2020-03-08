@@ -32,9 +32,6 @@ def add_cluster_change(time,change):
         cluster_mutations[time] = [change]
 
 
-def find_likeness(a,b):
-   
- 
 def get_match(target_key, matchlist):
     """
     Returns the key of the cluster stored in matchlist and removes that value from the dictionary
