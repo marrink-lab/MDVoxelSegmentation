@@ -32,6 +32,9 @@ def add_cluster_change(time,change):
         cluster_mutations[time] = [change]
 
 
+def find_likeness(a,b):
+   
+ 
 def get_match(target_key, matchlist):
     """
     Returns the key of the cluster stored in matchlist and removes that value from the dictionary
@@ -40,7 +43,6 @@ def get_match(target_key, matchlist):
         if target_key in matched_clusters:
             matched_clusters.remove(target_key)
     return key
-
 
 def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,frame_number):
     """
@@ -70,7 +72,7 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
             temp_score = (len(value.intersection(clusternew))
                 /max(len(value),len(clusternew),1) )
             #if the new caculated score is higher, this becomes the score to beat
-            if temp_score > likeness_score:
+            if (temp_score > likeness_score) and (temp_score > identity_threshold):
                 likeness_score = temp_score
                 index = idx
         # Add the most likely combination to the list of matches
@@ -214,7 +216,7 @@ def compare_2masks(mask1, mask2, selection):
 
 
 def main():
-    data = np.load('clusterszero.npy')
+    data = np.load('clusters.npy')
     data_old = np.copy(data)
     data, plotinfo, n_clusters = sort_clusters(data)
     for index, _ in enumerate(data):
