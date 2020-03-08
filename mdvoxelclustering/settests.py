@@ -3,14 +3,14 @@
 """
 Created on Tue Mar  5 12:17:03 2019
 
-@author: bart
+@author: albert
 """
 from collections import deque
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-identity_threshold = 0.7
+identity_threshold = 0.5
 cluster_mutations = {}
 
 
@@ -58,9 +58,9 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
     matchlist = {k: [] for k in range(len(clustersnew))}
     for key,value in clustersold.items():
         # The cluster 0 is autmaticly matched to the new 0 as it is the void
-        # if key == 0:
-        #     matchlist[0] = [key]
-        #     continue
+        if key == 0:
+            matchlist[0] = [key]
+            continue
         # The likeness score range from 0 to 1 and determines how much 1 cluster is like the other
         likeness_score=index=0
         #assert 0 in matchlist[0], "Zero is not zero..."
@@ -206,11 +206,23 @@ def sort_clusters(data):
     return data,plotinfo, clustercount
 
 
+def compare_2masks(mask1, mask2, selection):
+    condition1 = mask1[mask1 == selection]
+    condition2 = mask2[mask2 == selection]
+    comparision = np.all(condition1 == condition2)
+    return comparision
+
+
 def main():
-    data = np.load('clusters.npy')
-    
+    data = np.load('clusterszero.npy')
+    data_old = np.copy(data)
     data, plotinfo, n_clusters = sort_clusters(data)
-    
+    for index, _ in enumerate(data):
+        if not compare_2masks(data[index],data_old[index], 0):
+            print(index)
+
+
+
     np.save('clusters_ordered', data)
     
     with open('visualization_data.pickle', 'wb') as handle:
