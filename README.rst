@@ -24,7 +24,7 @@ This software has been developed to allow for a higher selection syntax than ato
 Features
 --------
 * v0.9 is a beta build and segmentation should be checked by eye. High throughput is not adviced yet. Exmple input files for CG lipid systems are supplied. They can be easily adapted to your system by quickly following the steps in the instructions.
-* Voxel based neighbour clustering under cubic periodic boudaries
+* Voxel based neighbour clustering under rectangular periodic boudaries
 * Fast contour clustering
 * Compatible with most MD file formats due to its tight link to MDAnalysis
 * Consistent clustering over time on trajectories of any size
