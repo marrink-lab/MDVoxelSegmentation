@@ -6,9 +6,9 @@ import pytest
 @pytest.fixture
 def olddict1():
     cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'}
-    cluster2 = {'b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
+    cluster2 = {'b1','b2','b3','b4','b5','b6','b7'}
     cluster3 = {'c1','c2','c3','c4','c5','c6','c7','c8','c9'}
-    cluster4 = {'d1','d2','d3'}
+    cluster4 = {'d9', 'd5', 'd6', 'd8', 'd10', 'd2', 'd7'}
     cluster5 = {'e1','e2','e3','e4','e5','e6','e7','e8'}
     cluster6 = {'f1','f2','f3','f4','f5','f6','f7','f8','f9','f10'}
     cluster7 = {'g1','g2','g3','g4'}
@@ -28,7 +28,7 @@ def olddict1():
 @pytest.fixture    
 def olddict2():
     cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'}
-    cluster2 = {'b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
+    cluster2 = {'b1','b2','b3','b4','b5','b6','b7'}
     cluster3 = {'c1','c2','c3','c4','c5','c6','c7','c8','c9'}
     cluster4 = {'d1','d2','d3'}
     cluster5 = {'e1','e2','e3','e4','e5','e6','e7','e8'}
@@ -52,7 +52,7 @@ def olddict2():
 @pytest.fixture  
 def olddict3():
     cluster1 = {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10'}
-    cluster2 = {'b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}
+    cluster2 = {'b1','b2','b3','b4','b5','b6','b7'}
     cluster3 = {'c1','c2','c3','c4','c5','c6','c7','c8','c9'}
     cluster4 = {'d1','d2','d3'}
     cluster5 = {'e1','e2','e3','e4','e5','e6','e7','e8'}
