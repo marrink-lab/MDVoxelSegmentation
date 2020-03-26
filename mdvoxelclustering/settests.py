@@ -200,8 +200,6 @@ def sort_clusters(data):
             newcluster.append(set())
         # I think this sort here is pretty important since we do not want to 
             # take any risk to have a non zero cluster as the first...
-        for cluster in sorted(frame_set):     
-            newcluster.append(set(np.where(frame == cluster)[0]))
         olddict, clustercount, deprecated_clusters = compare_clusters(olddict, newcluster, deprecated_clusters,clustercount,idx)
         for key, value in olddict.items():
             for index in value:
