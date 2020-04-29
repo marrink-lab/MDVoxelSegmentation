@@ -12,68 +12,183 @@ from shutil import copyfile
 # Make sure we take PBC into account
 mda.core.periodic = True
 
-def gen_explicit_matrix(atomgroup, resolution=1, PBC='cubic', 
-                        max_offset=0.05):
+
+def dim2lattice(x, y, z, alpha=90, beta=90, gamma=90):
+    """Convert dimensions (lengths/angles) to lattice matrix"""
+    cosa = np.cos( np.pi * alpha / 180 )
+    cosb = np.cos( np.pi * beta / 180 )
+    cosg = np.cos( np.pi * gamma / 180 )
+    sing = np.sin( np.pi * gamma / 180 )
+
+    zx = z * cosb
+    zy = z * ( cosa - cosb * cosg ) / sing
+    zz = np.sqrt( z**2 - zx**2 - zy**2 )
+
+    return np.array([x, 0, 0, y * cosg, y * sing, 0, zx, zy, zz]).reshape((3,3))
+
+
+def positive_linear_blur(array, box):
     """
-    Takes an atomgroup and bins it as close to the resolution as possible.
-    PBC is 'cubic' by default, but can be turned off. No other form of 
-    PBC is currently supported. If the offset of the actual resolution in
-    at least one dimension is more than by default 5%, the function will stop
-    and return an error specifying the actual offset in all dimensions plus
-    the frame in which the mapping error occured.
+    Perform simple line blurring of a matrix by rolling
+    one time in positive x, y, and z directions, correcting
+    for non-rectangular PBC.
+    """
+    blurred = np.copy(array)
+    # The box matrix is triangular
+    
+    # ... so a roll over x is just okay
+    blurred += np.roll(blurred, shift, axis=0)
+    
+    # ... but a roll over y may have an x-shift
+    #
+    xshift = shift * box[1, 0]
+    rolled = np.roll(array,  shift, 1)
+    rolled[:, 0, :] = np.roll(rolled[:, 0, :], -xshift, 0)
+    blurred += rolled
+    
+    # .. and a roll over z may have an x- and a y-shift
+    #
+    xyshift = shift * box[2, :2]
+    rolled = np.roll(array,  shift, 2)
+    rolled[:, :, 0] = np.roll(rolled[:, :, 0], xyshift, (0, 1))
+    blurred += rolled
+
+    return blurred
+
+
+def linear_blur(array, box, span, inplace=True):
+    """
+    Perform linear blurring of an array by rolling
+    over x, y, and z directions, for each value 
+    up to span. If inplace is True, the rolled 
+    array is always the target array, causing
+    a full blur.
+    """
+
+    blurred = np.copy(array)
+
+    if inplace:
+        other = blurred
+    else:
+        other = array
+        
+    for shift in range(1, span+1):
+        # The box matrix is triangular
+        
+        # ... so a roll over x is just okay
+        blurred += np.roll(other, shift, axis=0)
+        blurred += np.roll(other, -shift, axis=0)
+        
+        # ... but a roll over y may have an x-shift
+        #
+        xshift = shift * box[1, 0]
+        rolled = np.roll(other,  shift, 1)
+        rolled[:, 0, :] = np.roll(rolled[:, 0, :], -xshift, 0)
+        blurred += rolled
+        #
+        rolled = np.roll(other, -shift, 1)
+        rolled[:, -1, :] = np.roll(rolled[:, -1, :], xshift, 0)
+        blurred += rolled
+        
+        # .. and a roll over z may have an x- and a y-shift
+        #
+        xyshift = shift * box[2, :2]
+        rolled = np.roll(other,  shift, 2)
+        rolled[:, :, 0] = np.roll(rolled[:, :, 0], xyshift, (0, 1))
+        blurred += rolled
+        #
+        rolled = np.roll(other, -shift, 2)
+        rolled[:, :, -1] = np.roll(rolled[:, :, -1], -xyshift, (0, 1))
+        blurred += rolled
+    return blurred
+
+            
+def blur(array, box, span):
+    if span == -1:
+        blurred = positive_linear_blur(array, box)
+    elif span == 0:
+        blurred = linear_blur(array, box, -1, inplace=False)
+    else:
+        blurred = full_linear_blur(array, box, span)
+    return blurred
+
+
+def contour(array, box, span, inv=True):
+    if inv:
+        array = ~array
+    return blur(array, box, span).astype(bool) ^ array
+        
+
+def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
+    box = dim2lattice(*atomgroup.dimensions)
+    # The 10 is for going from nm to Angstrom
+    nbox = (box / (10 * resolution)).round().astype(int) # boxels
+    unit = np.linalg.inv(nbox) @ box                     # voxel shape
+    error = unit - 10 * resolution * np.eye(3)           # error: deviation from cubic
+    deviation = (0.1 * (unit**2).sum(axis=1)**0.5 - resolution) / resolution
+
+    if (np.abs(deviation) > max_offset).any():
+        raise ValueError(
+            'A scaling artifact has occured of more than {}% '
+            'deviation from the target resolution in frame {} was '
+            'detected. You could consider increasing the '
+            'resolution.'.format(max_offset,
+            atomgroup.universe.trajectory.frame)
+        )
+
+    transform = np.linalg.inv(box) @ nbox                 # transformation to voxel indices
+    voxels = atomgroup.positions @ transform         
+    if hyperres:
+        # Blur coordinates 
+        neighbors = hyperres * (np.mgrid[-1:2, -1:2, -1:2]).T.reshape((1, -1, 3))
+        voxels = (voxels[:, None, :] + neighbors).reshape((-1, 3))
+    voxels = voxels.astype(int)
+        
+    # Put everything in brick at origin
+    for dim in (2, 1, 0):
+        shifts = voxels[:, dim] // nbox[dim, dim]
+        voxels -= shifts[:, None] * nbox[dim, :]
+        
+    return voxels, nbox
+
+
+def gen_explicit_matrix(atomgroup, resolution=1, hyperres=False, max_offset=0.05):
+    """
+    Takes an atomgroup and bins it as close to the resolution as
+    possible. If the offset of the actual resolution in at least one
+    dimension is more than by default 5%, the function will stop and
+    return an error specifying the actual offset in all dimensions
+    plus the frame in which the mapping error occured.
     
     Returns
     (array) 3d boolean with True for occupied bins
     (dictionary) atom2voxel mapping
+
     """
-    # scaling from ansgtrom to nm
-    positions = atomgroup.positions/10
-    # obtaining the matrix raw dimensions
-    dimensions = atomgroup.dimensions[:3]/10
-    
-    # rounding the dimensions to the closest multiple of the resolution
-    mod_dimensions = np.array(divmod(dimensions, resolution))
-    mod_dimensions[1] = np.round(mod_dimensions[1]/resolution)
-    mod_dimensions[0] = mod_dimensions[0]+mod_dimensions[1]
-    
-    # scaling the matrix to the binning
-    scaling = mod_dimensions[0]/(dimensions/resolution)
-    max_error = np.max(np.absolute(scaling-1))
-    if max_error > max_offset:
-        raise ValueError(
-            'A scaling artifact has occured of more than 5%, {}% '
-            'deviation from the target resolution in frame {} was '
-            'detected. You could consider increasing the '
-            'resolution.'.format(np.abs(scaling-1)*100, 
-            atomgroup.universe.trajectory.frame),
-            )
-    scaled_positions = ((positions * scaling) / resolution).astype(int)
-  
-    # fixing cubic PBC
-    if PBC == 'cubic':
-        scaled_positions = scaled_positions % mod_dimensions[0]
-        
-    # making an empty explicit matrix
-    explicit_matrix = np.zeros((mod_dimensions[0].astype(int)),)
-    
-    # filling the explicit_matrix
-    scaled_positions = scaled_positions.astype('int')
-    explicit_matrix[scaled_positions[:,0], scaled_positions[:,1], 
-                    scaled_positions[:,2]] = 1
-    
+
+    voxels, nbox = voxelate_atomgroup(atomgroup, resolution, hyperres, max_offset=max_offset)
+    # Using np.unique gives a small performance hit.
+    # Might still be necessary with large coordinate sets?
+    # unique = np.unique(voxels, axis=0)
+    x, y, z = voxels.T
+    explicit = np.zeros(np.diagonal(nbox), dtype=bool)
+    explicit[x, y, z] = True
+
     # generating the mapping dictionary
     voxel2atom = collections.defaultdict(list)
     # atom index starts from 0 here and is the index in the array, not the
     #  selection atom index in atom_select (these start from 1)
-    for idx, scaled_position in enumerate(scaled_positions):
-        x, y, z = scaled_position
-        voxel2atom['x{}y{}z{}'.format(x, y, z)].append(
-                atomgroup.atoms[idx].ix)
-    
-    return explicit_matrix.astype(bool), voxel2atom
+    if hyperres:
+        indices = np.repeat(atomgroup.ix, 27)
+    else:
+        indices = atomgroup.ix
+    for idx, voxel in zip(indices, voxels):
+        voxel2atom[tuple(voxel)].append(idx)
+        
+    return explicit, voxel2atom, nbox
 
 
-def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic', 
+def gen_explicit_matrix_multiframe(atomgroup, resolution=1,
                                    max_offset=0.05, frames=0, hyper_res=False):
     """
     Tries to add multiple explicit matrices and mappings together. This might
@@ -86,38 +201,16 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
     (array) 3d boolean with True for occupied bins
     (dictionary) atom2voxel mapping
     """
+
+    if hyper_res:
+        return gen_explicit_matrix(
+            atomgroup, resolution, hyper_res, max_offset
+        )
+
     # Starting the current frame
     current_frame = atomgroup.universe.trajectory.frame
-    explicit_matrix, voxel2atom = gen_explicit_matrix(atomgroup, resolution, 
-                                                      PBC, max_offset)
-    
-    if hyper_res:
-        # this can be removed by making the mod positions smarter
-        ref_positions = np.copy(atomgroup.positions)
-        mod_values = list(itertools.product([-1, 0, 1], 
-                                            [-1, 0, 1], 
-                                            [-1, 0, 1],
-                                            ))
-        # removing the 000 entry for it is done by default.
-        mod_values.remove((0, 0, 0))
-        # scaling the mod_values with the resolution.
-        mod_values = np.array(mod_values, dtype=float)
-        mod_values *= (resolution/2)
-        
-        # generating the hyper res explicit matrix
-        for mod_value in mod_values:
-            mod_positions = ref_positions + mod_value
-            atomgroup.positions = mod_positions
-            temp_explicit_matrix, temp_voxel2atom = gen_explicit_matrix(
-                    atomgroup, resolution, PBC, max_offset
-                    )
-            explicit_matrix += temp_explicit_matrix
-            voxel2atom = {**voxel2atom, **temp_voxel2atom}
-            
-            # restoring the positions
-            # this can be removed by making the mod positions smarter
-            atomgroup.positions = ref_positions
-        return explicit_matrix, voxel2atom
+    explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(atomgroup, resolution, 
+                                                            False, max_offset)
     
     # Try to stack the densities, but could fail due to voxel amount mismatch
     #  due to pressure coupling and box deformations.
@@ -131,9 +224,9 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
         atomgroup.universe.trajectory[frame]
         # Smearing the positions for hyper res.
 
-        temp_explicit_matrix, temp_voxel2atom = gen_explicit_matrix(
-                    atomgroup, resolution, PBC, max_offset
-                    )
+        temp_explicit_matrix, temp_voxel2atom, nbox = gen_explicit_matrix(
+            atomgroup, resolution, max_offset
+        )
         try:
             explicit_matrix += temp_explicit_matrix
             #voxel2atom = {**voxel2atom, **temp_voxel2atom}
@@ -145,11 +238,10 @@ def gen_explicit_matrix_multiframe(atomgroup, resolution=1, PBC='cubic',
     # Set the active frame back to the current frame    
     atomgroup.universe.trajectory[current_frame]
     
-    return explicit_matrix, voxel2atom
+    return explicit_matrix, voxel2atom, nbox
 
 
-def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0, 
-                             hyper_res=False):
+def voxels2atomgroup(voxels, voxel2atom, atomgroup):
     """
     Converts the voxels in a voxel list back to an atomgroup.
     
@@ -159,16 +251,13 @@ def convert_voxels2atomgroup(voxel_list, voxel2atom, atomgroup, frames=0,
     
     Returns an atomgroup.
     """
-    indices = [voxel2atom['x{}y{}z{}'.format(voxel[0], voxel[1], voxel[2])] 
-                for voxel in voxel_list]
-    indices = np.concatenate(indices).astype('int')
-    if frames == 0 and not hyper_res:
-        assert np.unique(indices).shape == indices.shape, 'Indices should appear only once.'
-    return atomgroup.universe.atoms[indices]
+    # It is not important that every index only occurs onec,
+    # as long as each atom is only selected once.
+    indices = { idx for v in voxels for idx in voxel2atom[tuple(v)] }
+    return atomgroup.universe.atoms[list(indices)]
 
 
-def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0, 
-                                hyper_res=False):
+def clusters2atomgroups(clusters, voxel2atom, atomgroup):
     """
     Converts the cluster in voxel space to an atomgroup.
     
@@ -177,88 +266,30 @@ def convert_clusters2atomgroups(clusters, voxel2atom, atomgroup, frames=0,
     
     Returns a list of atomgroups.
     """
-    atomgroups = []
-    for cluster in clusters:
-        voxel_list = clusters[cluster]
-        atomgroups.append(convert_voxels2atomgroup(voxel_list, 
-                                                  voxel2atom, atomgroup, 
-                                                  frames, hyper_res))
-    return atomgroups
+    return [
+        voxels2atomgroup(v, voxel2atom, atomgroup)
+        for c, v in clusters.items()
+    ]
 
 
-def blur_matrix(matrix, span=0, PBC='cubic'):
-    """
-    Blurs a 3d boolean matrix by adding the values which are within span range.
-    Default behaviour is using the inverse of the input matrix. This results in 
-    an inner smearing useful for generating the inner contour. The opisite is 
-    useful for generating the outer smearing for the outer contour. By default
-    it assumes cubic periodic boundary conditions. PBC can currently not be 
-    turned off.
-    
-    Returns the blurred boolean matrix.
-    """
-    blurred_matrix = copy.copy(matrix)
-    if PBC == 'cubic':
-        if span == -1:
-            for current_axis in range(3):
-                # blurring here is a positive line blur this is a feature and
-                # is extremely important for leaflet detection
-                blurred_matrix += np.roll(matrix, 1, current_axis)
-        if span == 0:
-            for current_axis in range(3):
-                # blurring here is a line blur this is a feature and
-                # is extremely important for leaflet detection
-                blurred_matrix += np.roll(matrix, 1, current_axis)
-                blurred_matrix += np.roll(matrix, -1, current_axis)
-        else:
-            for shift in range(span):
-                for current_axis in range(3):
-                    blurred_matrix += np.roll(blurred_matrix, shift+1, 
-                                              current_axis)
-                    blurred_matrix += np.roll(blurred_matrix, -(shift+1), 
-                                              current_axis)
-    else:
-        raise ValueError(
-            'Blur matrix only supports cubic periodic boundary conditions.'
-            )
-    return blurred_matrix.astype(bool)
-   
-    
-def gen_contour(matrix, span=1, inv=True):
-    """
-    Generatates the inner (inv = True), or outer (inv = False) contour of span 
-    around the 3d boolean matrix. Taking into account the first voxel
-    neighbours within span range.
-    
-    Returns the contour boolean matrix.
-    """
-    if inv:
-        blurred_matrix = blur_matrix(np.logical_not(matrix), span)
-        return blurred_matrix.astype(bool) ^ np.logical_not(matrix)
-    if not inv:
-        blurred_matrix = blur_matrix(matrix, span)
-        return blurred_matrix.astype(bool) ^ matrix
-
-
-def find_neighbours(position, dimensions, span=1):
+def find_neighbours(position, box, span=1):
     """
     Uses the position to generate a a box width size span around the position.
     Taking cubic PBC into account.
     """
-    neighbours =  list(itertools.product(
-            range(position[0]-span, position[0]+span+1),
-            range(position[1]-span, position[1]+span+1),
-            range(position[2]-span, position[2]+span+1),
-            ))
-    # taking care of cubic PBC
-    if 0 in position or np.any(position >= dimensions-1):
-        for idx, neighbour in enumerate(neighbours):
-            neighbours[idx] = (neighbour[0]%dimensions[0], 
-                               neighbour[1]%dimensions[1], 
-                               neighbour[2]%dimensions[2])
-    return neighbours
+    s = slice(-span, span+1)
+    neighbours = np.mgrid[s, s, s].T.reshape((-1, 3)) + position
+    
+    if all(m > span-1 for m in position) and all(position < np.diagonal(box) - span):
+        # ... then we are done already
+        return [ tuple(v) for v in neighbours ]
 
+    # Put everything in brick at origin
+    for dim in (2, 1, 0):
+        shifts = neighbours[:, dim] // box[dim, dim]
+        neighbours -= shifts[:, None] * box[dim, :]
 
+    return [ tuple(v) for v in neighbours ]
 
 
 #@profile
@@ -471,7 +502,7 @@ def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array,
 
 # The 3d example of a very clear more set oriented neighbour clustering
 #@profile
-def set_clustering(explicit_matrix, exclusion_mask=False, span=1, 
+def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1, 
                    verbose=False, min_cluster_size = 0):
     """
     A set oriented neighbour voxel clustering.
@@ -491,16 +522,11 @@ def set_clustering(explicit_matrix, exclusion_mask=False, span=1,
     # removing the exclusion mask from the occupied voxel matrix
     if exclusion_mask is not False:
         explicit_matrix[exclusion_mask == True] = False
-    # finding all hits (occupied voxels)
-    positions = np.array(np.where(explicit_matrix == 1)).T
-    if verbose:
-        print('There are {} points to cluster.'.format(positions.shape[0]))
-    # initiating the empty set for all hits
-    positions_set = set()
+    # finding all hits (occupied voxels) and
     # adding each hit to the set as a tuple
-    for position in positions:
-        position = tuple(position)
-        positions_set.add((position))
+    pset = { pos for pos in zip(*np.where(explicit_matrix)) }
+    if verbose:
+        print('There are {} points to cluster.'.format(len(positions_set)))
     # stop timer for making the hits set (verbose)
     stop = time.time()
     if verbose:
@@ -510,41 +536,18 @@ def set_clustering(explicit_matrix, exclusion_mask=False, span=1,
     #  the minute range.
     # beginning the timer for clustering (verbose)
     start = time.time()
-    # the range of the neighbour search (1 is direct neighbour including 
-    #  the diagonal)
-    span = 1
     # the starting cluster
     current_cluster = 1
     # output dictionary containing a list of hits per cluster
     clusters = {}
-    # the to do queue
-    queue = set()
-    # getting the perdic dimensions
-    dimensions = np.array(explicit_matrix.shape)
     # as long as there are hits
-    while len(positions_set) > 0:
-        # start the first point and remove from the hits
-        current_position = positions_set.pop()
-        # add self as first to current cluster
-        clusters[current_cluster] = [current_position]
-        # find all neighbours of self taking cubic PBC into account
-        current_neighbours = find_neighbours(current_position, dimensions, 
-                                             span)
-        # add all neighbours to the queue if they are in the hits
-        queue =  positions_set.intersection(current_neighbours)
-        while len(queue) > 0:
-            # obtain current neighbour and remove from queue
-            current_position = queue.pop()
-            # also remove current neighbour from the hits
-            positions_set.remove(current_position)
-            # add self to current cluster
-            clusters[current_cluster].append(current_position)
-            # find all neighbours of self taking cubic PBC into account
-            current_neighbours = find_neighbours(current_position, 
-                                                 dimensions, span)
-            # add all neighbours to the queue which are in the hits
-            queue = queue.union(positions_set.intersection(current_neighbours))
-        # move to next cluster
+    while pset:
+        clusters[current_cluster] = []
+        active = {pset.pop()}
+        while active:
+            around = { n for v in active for n in find_neighbours(v, box, span) }
+            clusters[current_cluster].extend(active)
+            active = { n for n in around if n in pset and not pset.remove(n) }
         current_cluster += 1
     # stopping the timer for clustering (verbose)
     stop = time.time()
@@ -632,14 +635,14 @@ if __name__=='__main__':
     resolution = 1
 
     start = time.time()
-    explicit_matrix, voxel2atom = gen_explicit_matrix(selection, 
-                                                      resolution = resolution)
-    contour_matrix = gen_contour(explicit_matrix, 1, True)
-    outer_contour_matrix = gen_contour(explicit_matrix, 1, False)
+    explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(selection, 
+                                                            resolution = resolution)
+    contour_matrix = contour(explicit_matrix, nbox, 1, True)
+    outer_contour_matrix = contour(explicit_matrix, nbox, 1, False)
     print('Making the contour took {}.\nGenerating output '
           'figures...'.format(time.time()-start))
     print('\nCLUSTERING 3, list based cubic boundary fix')
-    clusters = set_clustering(contour_matrix, exclusion_mask = False, 
+    clusters = set_clustering(contour_matrix, nbox, exclusion_mask = False, 
                               span = 1, verbose = True)
     plot_voxels(explicit_matrix)
     plot_voxels(contour_matrix)

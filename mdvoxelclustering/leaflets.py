@@ -101,16 +101,16 @@ def contour_clustering(
     The contour matrix.
     """
     # Generating the binary explicit matrix
-    explicit_matrix, voxel2atoms = clus.gen_explicit_matrix_multiframe(
-            atomgroup, 
-            resolution,
-            frames=frames,
-            hyper_res = hyper_res
-            )
+    explicit_matrix, voxel2atoms, nbox = clus.gen_explicit_matrix_multiframe(
+        atomgroup, 
+        resolution,
+        frames=frames,
+        hyper_res = hyper_res
+    )
     # calculating the contour mask
-    contour_mask = clus.gen_contour(explicit_matrix, span, inv)
+    contour_mask = clus.contour(explicit_matrix, nbox, span, inv)
     # clustering the contours
-    contour_clusters = clus.set_clustering(contour_mask, exclusion_mask)
+    contour_clusters = clus.set_clustering(contour_mask, nbox, exclusion_mask)
     #plot_voxels(contour_mask)
     return contour_clusters, voxel2atoms, explicit_matrix, contour_mask
 
@@ -133,15 +133,15 @@ def volume_clustering(
     A dictionary containing the voxel2atoms conversion
     The explicit matrix.
     """
-    explicit_matrix, voxel2atoms = clus.gen_explicit_matrix_multiframe(
-            atomgroup, 
-            resolution,
-            frames = frames,
-            hyper_res = hyper_res,
-            )
+    explicit_matrix, voxel2atoms, nbox = clus.gen_explicit_matrix_multiframe(
+        atomgroup, 
+        resolution,
+        frames = frames,
+        hyper_res = hyper_res,
+    )
     if headgroups_selection is not False:
         explicit_matrix[headgroups_selection] = False
-    volume_clusters = clus.set_clustering(explicit_matrix, exclusion_mask)
+    volume_clusters = clus.set_clustering(explicit_matrix, nbox, exclusion_mask)
     return volume_clusters, voxel2atoms, explicit_matrix
 
 
@@ -171,9 +171,10 @@ def leaflet_clustering(
         test += 1
     # Generating the explicit matix of all headgroups for masking the 
     #  lipid tail densities.
-    headgroups_mask, headgroups_mapping = clus.gen_explicit_matrix_multiframe(
-            selection_headgroups_atomgroup, resolution, frames=frames,
-            hyper_res = hyper_res)
+    headgroups_mask, headgroups_mapping, nbox = clus.gen_explicit_matrix_multiframe(
+        selection_headgroups_atomgroup, resolution, frames=frames,
+        hyper_res = hyper_res
+    )
     
     #TODO REMOVE PRINT
     if test:
@@ -184,12 +185,13 @@ def leaflet_clustering(
     #   in the clustering queue. Therefore they will act as a stop. 
     if exclusions_selection:
         # Protein volume mask.
-        explicit_matrix_exclusions = clus.gen_explicit_matrix_multiframe(
-                exclusions_selection, resolution, frames=frames, 
-                hyper_res = hyper_res)[0]
+        explicit_matrix_exclusions, _, nbox = clus.gen_explicit_matrix_multiframe(
+            exclusions_selection, resolution, frames=frames, 
+            hyper_res = hyper_res
+        )
         # Protein contour (O) mask.
-        outward_contour_exclusions = clus.gen_contour(
-                explicit_matrix_exclusions, span=1, inv=False
+        outward_contour_exclusions = clus.contour(
+                explicit_matrix_exclusions, nbox, span=1, inv=False
                 )
         # Protein volume+contour(O) mask.
         exclusion_mask = np.logical_or(explicit_matrix_exclusions,
@@ -221,12 +223,10 @@ def leaflet_clustering(
         plot_voxels(all_tails_mask)
 
     # Converting the voxel mask to selection atom indices.
-    tails_atomgroups = clus.convert_clusters2atomgroups(
+    tails_atomgroups = clus.clusters2atomgroups(
             tails_clusters,
             tails_mapping,
             selection_tails_atomgroup,
-            frames,
-            hyper_res,
             )
     # Using the atom indices to obtain residues in selection.
     tails_residuegroups = [
@@ -253,10 +253,10 @@ def leaflet_clustering(
         # Generating the explicit matrix for the headgroups in current tails.
         local_headgroupsatomgroup = (tails_residuegroup.atoms &
                                       selection_headgroups_atomgroup)
-        headgroups_mask, headgroups_mapping = clus.gen_explicit_matrix_multiframe(
-                local_headgroupsatomgroup, resolution, frames=frames,
-                hyper_res = hyper_res,
-                )
+        headgroups_mask, headgroups_mapping, nbox = clus.gen_explicit_matrix_multiframe(
+            local_headgroupsatomgroup, resolution, frames=frames,
+            hyper_res = hyper_res,
+        )
         
         if verbose:
             print('Currently plotting the headgroups mask.')
@@ -268,9 +268,9 @@ def leaflet_clustering(
         headgroups_mask[all_tails_mask &
                          headgroups_mask] = False
         # Clustering the masked headgroup densities.
-        headgroups_clusters = clus.set_clustering(headgroups_mask,
-                                                  exclusion_mask,
-                                                  )
+        headgroups_clusters = clus.set_clustering(
+            headgroups_mask, nbox, exclusion_mask
+        )
 
         if verbose:
             print('\nCurrent leaflet clusters: {}'.format(len(
@@ -284,12 +284,10 @@ def leaflet_clustering(
         
         # Converting the voxel mask to selection atom indices with respect to 
         #  the universe.atoms.
-        leaflets_atomgroups = clus.convert_clusters2atomgroups(
+        leaflets_atomgroups = clus.clusters2atomgroups(
                 headgroups_clusters,
                 headgroups_mapping,
                 local_headgroupsatomgroup,
-                frames,
-                hyper_res,
                 )
         # Converting the atom indices in selection to residues in selection.
         leaflets_residuegroups = [
