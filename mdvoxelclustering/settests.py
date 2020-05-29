@@ -226,6 +226,8 @@ def sort_clusters(data):
         newcluster = deque()
         plotvariables = []
         frame_set = set(frame)
+        for cluster in set(frame):     
+            newcluster.append(set(np.where(frame == cluster)[0]))
         # Make sure that the first entry in the newcluster dequeue is always 0
         if 0 not in frame_set:
             newcluster.append(set())

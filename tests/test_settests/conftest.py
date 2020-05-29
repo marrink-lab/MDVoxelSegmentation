@@ -1,5 +1,3 @@
-import mdvoxelclustering as mdv
-from mdvoxelclustering import settests as sets
 from collections import deque
 import pytest
 

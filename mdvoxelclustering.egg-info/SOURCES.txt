@@ -24,6 +24,8 @@ mdvoxelclustering/identity.py
 mdvoxelclustering/leaflets.py
 mdvoxelclustering/plotting.py
 mdvoxelclustering/settests.py
+mdvoxelclustering/settestsbackup.py
+mdvoxelclustering/test.py
 mdvoxelclustering.egg-info/PKG-INFO
 mdvoxelclustering.egg-info/SOURCES.txt
 mdvoxelclustering.egg-info/dependency_links.txt
