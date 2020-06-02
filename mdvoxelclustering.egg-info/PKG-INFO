@@ -1,11 +1,11 @@
 Metadata-Version: 1.1
 Name: mdvoxelclustering
-Version: 0.1.0
+Version: 0.9.2
 Summary: Using neighbour clustering in voxelspace for fast and consistant spatial and temporal clustering.
 Home-page: https://github.com/BartBruininks/mdvoxelclustering
 Author: Bart M. H. Bruininks
 Author-email: b.m.h.bruininks@rug.nl
-License: ISCL
+License: Apache 2
 Description: ===============================
         MDVoxelClustering
         ===============================
@@ -32,7 +32,7 @@ Description: ===============================
         Features
         --------
         * v0.9 is a beta build and segmentation should be checked by eye. High throughput is not adviced yet. Exmple input files for CG lipid systems are supplied. They can be easily adapted to your system by quickly following the steps in the instructions.
-        * Voxel based neighbour clustering under cubic periodic boudaries
+        * Voxel based neighbour clustering under rectangular periodic boudaries
         * Fast contour clustering
         * Compatible with most MD file formats due to its tight link to MDAnalysis
         * Consistent clustering over time on trajectories of any size
@@ -133,7 +133,7 @@ Description: ===============================
         
         History
         -------
-        0.9.1 (2020-03-10)
+        0.9.2 (2020-03-10)
         0.1.0 (2019-07-01)
         ---------------------
         
@@ -143,11 +143,6 @@ Keywords: mdvoxelclustering
 Platform: UNKNOWN
 Classifier: Development Status :: 2 - Pre-Alpha
 Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: ISC License (ISCL)
+Classifier: License :: OSI Approved :: Apache 2
 Classifier: Natural Language :: English
-Classifier: Programming Language :: Python :: 2
-Classifier: Programming Language :: Python :: 2.6
-Classifier: Programming Language :: Python :: 2.7
 Classifier: Programming Language :: Python :: 3
-Classifier: Programming Language :: Python :: 3.3
-Classifier: Programming Language :: Python :: 3.4
