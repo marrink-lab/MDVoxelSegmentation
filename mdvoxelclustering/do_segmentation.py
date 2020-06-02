@@ -10,7 +10,9 @@ segmentation for Martini lipids.
 from . import argparser
 from . import leaflets
 
-# Reading in the terminal commands/input files
-args = argparser.main()
+def main():
+    # Reading in the terminal commands/input files
+    args = argparser.main()
 
-
+if __name__=='__main__':
+    main()
