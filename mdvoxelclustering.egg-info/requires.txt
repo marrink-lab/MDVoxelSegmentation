@@ -1,4 +1,4 @@
-apiwrapper
 numpy
 MDAnalysis
+psutil
 matplotlib

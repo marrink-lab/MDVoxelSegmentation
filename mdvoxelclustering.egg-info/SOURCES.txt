@@ -18,7 +18,9 @@ docs/readme.rst
 docs/usage.rst
 mdvoxelclustering/__init__.py
 mdvoxelclustering/antidisco.py
+mdvoxelclustering/argparser.py
 mdvoxelclustering/clustering.py
+mdvoxelclustering/do_segmentation.py
 mdvoxelclustering/graphing.py
 mdvoxelclustering/identity.py
 mdvoxelclustering/leaflets.py

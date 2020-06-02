@@ -2,7 +2,7 @@
 
 __author__ = 'Bart M. H. Bruininks'
 __email__ = 'b.m.h.bruininks@rug.nl'
-__version__ = '0.1.0'
+__version__ = '0.9.2'
 from . import clustering
 from . import leaflets
 from . import settests
