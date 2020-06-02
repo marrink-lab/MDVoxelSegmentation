@@ -441,14 +441,17 @@ def leaflet_clustering_threaded(
     return clusters
 
 
-def mf_leaflets_threaded(current_thread):
+def mf_leaflets_threaded(current_thread, args):
     # Parsing the input file.
+    print(args)
+    return
     try:
         import clustering_input as inp
     except ModuleNotFoundError:
         print('There should be a file called clustering_input.py with needed\
 settings. (An exmaple file should be made here)')
         sys.exit()
+
     # Generating the universe.
     #print('Reading trajectory...')
     universe = mda.Universe(inp.tpr, inp.xtc)
