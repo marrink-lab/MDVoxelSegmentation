@@ -8,5 +8,6 @@ from . import leaflets
 from . import settests
 from . import antidisco
 from . import graphing
+from . import argparser
 from . import do_segmentation
 #from . import identity

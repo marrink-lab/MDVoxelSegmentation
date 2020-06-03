@@ -1,12 +1,12 @@
 # coding: utf-8
-import numpy as np
-import MDAnalysis as mda
-import collections
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import copy
 import time
 import itertools
+import collections
+import numpy as np
+import MDAnalysis as mda
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from shutil import copyfile
 
 # Make sure we take PBC into account
@@ -109,7 +109,9 @@ def blur(array, box, span):
     elif span == 0:
         blurred = linear_blur(array, box, -1, inplace=False)
     else:
-        blurred = full_linear_blur(array, box, span)
+        blurred = linear_blur(array, box, span)
+        #TODO This does not exist.
+        #blurred = full_linear_blur(array, box, span)
     return blurred
 
 
@@ -188,57 +190,57 @@ def gen_explicit_matrix(atomgroup, resolution=1, hyperres=False, max_offset=0.05
     return explicit, voxel2atom, nbox
 
 
-def gen_explicit_matrix_multiframe(atomgroup, resolution=1,
-                                   max_offset=0.05, frames=0, hyper_res=False):
-    """
-    Tries to add multiple explicit matrices and mappings together. This might
-    be usefull for clustering at higher matrix resolution (lower than 1 nm).
-    Frames is used to smear over extra consecutive frames (0 is no smearing
-    over time). Hyper_res is used to smear the data points over half the
-    resolution. Hyper_res and frame smearing is exclusive for now.
+# def gen_explicit_matrix_multiframe(atomgroup, resolution=1,
+#                                    max_offset=0.05, frames=0, hyper_res=False):
+#     """
+#     Tries to add multiple explicit matrices and mappings together. This might
+#     be usefull for clustering at higher matrix resolution (lower than 1 nm).
+#     Frames is used to smear over extra consecutive frames (0 is no smearing
+#     over time). Hyper_res is used to smear the data points over half the
+#     resolution. Hyper_res and frame smearing is exclusive for now.
     
-    Returns
-    (array) 3d boolean with True for occupied bins
-    (dictionary) atom2voxel mapping
-    """
+#     Returns
+#     (array) 3d boolean with True for occupied bins
+#     (dictionary) atom2voxel mapping
+#     """
 
-    if hyper_res:
-        return gen_explicit_matrix(
-            atomgroup, resolution, hyper_res, max_offset
-        )
+#     if hyper_res:
+#         return gen_explicit_matrix(
+#             atomgroup, resolution, hyper_res, max_offset
+#         )
 
-    # Starting the current frame
-    current_frame = atomgroup.universe.trajectory.frame
-    explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(atomgroup, resolution, 
-                                                            False, max_offset)
+#     # Starting the current frame
+#     current_frame = atomgroup.universe.trajectory.frame
+#     explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(atomgroup, resolution, 
+#                                                             False, max_offset)
     
-    # Try to stack the densities, but could fail due to voxel amount mismatch
-    #  due to pressure coupling and box deformations.
-    # Preventing index errors.
-    max_frame = len(atomgroup.universe.trajectory) - 1
-    end_frame = current_frame + frames
+#     # Try to stack the densities, but could fail due to voxel amount mismatch
+#     #  due to pressure coupling and box deformations.
+#     # Preventing index errors.
+#     max_frame = len(atomgroup.universe.trajectory) - 1
+#     end_frame = current_frame + frames
     
-    # actual expansion for multiframe smearing
-    frame = current_frame + 1
-    while frame <= max_frame and frame < end_frame:
-        atomgroup.universe.trajectory[frame]
-        # Smearing the positions for hyper res.
+#     # actual expansion for multiframe smearing
+#     frame = current_frame + 1
+#     while frame <= max_frame and frame < end_frame:
+#         atomgroup.universe.trajectory[frame]
+#         # Smearing the positions for hyper res.
 
-        temp_explicit_matrix, temp_voxel2atom, nbox = gen_explicit_matrix(
-            atomgroup, resolution, max_offset
-        )
-        try:
-            explicit_matrix += temp_explicit_matrix
-            #voxel2atom = {**voxel2atom, **temp_voxel2atom}
-        except ValueError:
-            #TODO testing
-            #print('There was a mismerge.')
-            pass
-        frame += 1
-    # Set the active frame back to the current frame    
-    atomgroup.universe.trajectory[current_frame]
+#         temp_explicit_matrix, temp_voxel2atom, nbox = gen_explicit_matrix(
+#             atomgroup, resolution, max_offset
+#         )
+#         try:
+#             explicit_matrix += temp_explicit_matrix
+#             #voxel2atom = {**voxel2atom, **temp_voxel2atom}
+#         except ValueError:
+#             #TODO testing
+#             #print('There was a mismerge.')
+#             pass
+#         frame += 1
+#     # Set the active frame back to the current frame    
+#     atomgroup.universe.trajectory[current_frame]
     
-    return explicit_matrix, voxel2atom, nbox
+#     return explicit_matrix, voxel2atom, nbox
 
 
 def voxels2atomgroup(voxels, voxel2atom, atomgroup):
@@ -422,7 +424,6 @@ def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
             leftovers += 1
         else:
             temp_changes[0] = temp_changes[0].residues.atoms
-            print(temp_changes)
             changes.append(temp_changes)
     # Altering the cluster assignment in the cluster array for non 0 changes
     for change in changes:
@@ -621,29 +622,3 @@ def vmd_visualization_single_frame(template_file, clusters):
                     cluster, 
                     alphabet[((cluster-1) % 26)],
                     ))
-
-
-if __name__=='__main__':
-    data = mda.Universe('/home/bart/projects/clustering/test_files/\
-4_adhesion/attached.gro')
-    selection = data.select_atoms('resname DOPE DOTAP')
-    start = time.time()
-    test_selection = data.select_atoms(
-        '(name PO4 NC3 NH3 CNO) and around 8 (name C1A C1B C2A C2B C3A C3B '
-        'C4A C4B D1A D1B D2A DB D3A D3B D4A D4B)')
-    print('The search query took {}'.format(time.time()-start))
-    resolution = 1
-
-    start = time.time()
-    explicit_matrix, voxel2atom, nbox = gen_explicit_matrix(selection, 
-                                                            resolution = resolution)
-    contour_matrix = contour(explicit_matrix, nbox, 1, True)
-    outer_contour_matrix = contour(explicit_matrix, nbox, 1, False)
-    print('Making the contour took {}.\nGenerating output '
-          'figures...'.format(time.time()-start))
-    print('\nCLUSTERING 3, list based cubic boundary fix')
-    clusters = set_clustering(contour_matrix, nbox, exclusion_mask = False, 
-                              span = 1, verbose = True)
-    plot_voxels(explicit_matrix)
-    plot_voxels(contour_matrix)
-    plot_voxels(outer_contour_matrix)
