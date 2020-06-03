@@ -8,44 +8,52 @@ Running this file is all that is needed to perform a basic leaflet
 segmentation for Martini lipids.
 """
 import time
+import numpy as np
 import multiprocessing as mp
 import MDAnalysis as mda
+from functools import partial
 from mdvoxelclustering import argparser
 from mdvoxelclustering import leaflets
+
+     
 
 def main():
     # Reading in the terminal commands/input files
     args = argparser.main()
     
-    # Processing input
-    print('Reading trajectory...')
+    # Reading trajectory
+    print('\nReading trajectory...')
     universe = mda.Universe(args.reference, args.trajectory)
+    if args.end == None:
+        args.end = len(universe.trajectory)
+    
+    # Finding the total amount of frames
+    args.frames = int((args.end - args.begin) / args.stride)
     
     # Setting the amount of threads to the lowest value [detected, trajlen]
-    if len(universe.trajectory) < args.threads:
-        args.threads = len(universe.trajectory)
+    if args.frames < args.threads:
+        args.threads = args.frames
+            
     
     # Starting the multithreaded leaflet segmentation
-    print('Actual segmentations..')
+    #print('Actual segmentation..')
     start = time.time()
     
     pool = mp.Pool(args.threads)
-    segments = pool.map(leaflets.mf_leaflets_threaded, range(args.threads))
+    segments = pool.map(partial(leaflets.mf_leaflets_threaded, args=args), range(args.threads))
     segments = np.asarray(segments)
     segments = np.concatenate(segments, axis=0)
     pool.close()
     pool.join()
     
-    print(segments, len(segments))
+    #print(segments, len(segments))
     
-    print('Segmentation took: {}.'.format(time.time() - start))
+    print()
+    print('Segmentation took: {:.2f} seconds.\n'.format(time.time() - start))
+    print('The segmentation array was written to [{}.npy].'.format(args.output))
     
     #TODO Writing the ouput at once, this should become a per frame append!
     np.save(args.output, segments.astype(args.bit_size))
-    
-    if args.plotting:
-        plot_clusters(universe, segments, args.stride, args.reduce_points, min_size = 1,
-                      start_frame = args.begin, stop_frame = args.end)
     
 if __name__=='__main__':
     main()

@@ -11,6 +11,49 @@ user input, that should be handled here.
 """
 import argparse
 import psutil
+import os
+
+def write_default_input(path):
+    """
+    Writes a default selections input file for most standard Martini 
+    molecules. Common lipids in the lipidome as well as basic protein and DNA 
+    are included.
+
+    Parameters
+    ----------
+    path : str
+        The path to the intended location.
+
+    Returns
+    -------
+    None.
+    """
+    message = (
+"""# The selections should be in the MDAnalysis selection format. They need to be one line, directly
+#  after their header, anything else is ignored.
+
+[martini_heads]
+(name PO4 NC3 CNO NH3 TAP GL1 GL2 AM1 AM2 GM1 GM2 GM3 GM4 GM5 GM6 GM7 GM8 GM9 GM10 GM11 GM12 GM13 GM14 GM15 GM16 GM17) or (resname CHOL and name ROH) or (resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and name C1 C2 C3 P1 P2 P3)
+
+[martini_tails]
+(name D6A D6B C6A C6B D5A D5B C5A C5B D4A D4B C4A C4B D3A D3B C3A C3B) or (resname CHOL XHOL and name C1)
+
+[martini_linkers]
+(name PO4 GL1 GL2 D1A D1B C1A C1B AM1 AM2 GM1 GM2 COO COOH) or (resname CHOL and name ROH) or (resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and name C1 C2 C3 P1 P2 P3) or (name BB)
+
+[martini_proteins]
+(name BB SC1 SC2 SC3 SC4)
+
+[martini_dna]
+(name BB1 BB2 SC1 SC2 SC3 SC4)
+
+[none]
+(False)
+"""
+)
+    with open(path, 'w') as f:
+        f.write(message)
+    return
 
 def read_arguments():
     """
@@ -29,11 +72,11 @@ def read_arguments():
     optional_grp = parser.add_argument_group(title='optional arguments')
     # REQUIRED
     required_grp.add_argument(
-        '-f', '--reference', nargs='?', required=True,
+        '-f', '--reference', nargs='?', required=True, type=str,
         help='an MDAnalysis coordinate file including atom names, resids and positions (e.g. GRO, TPR or PDB)',
         )
     required_grp.add_argument(
-        '-x', '--trajectory', nargs='?', required=True,
+        '-x', '--trajectory', nargs='?', required=True, type=str,
         help='an MDAnalysis compatible trajectory file (e.g. XTC)',
         )
     
@@ -41,85 +84,87 @@ def read_arguments():
     #TODO Make it so a selection input is read.
     optional_grp.add_argument(
         '-si', '--selections_input', nargs='?', default='selections.inp', 
+        type = str,
         help='the selection input file (default=selections.inp)',
-        )
+        )    
     optional_grp.add_argument(
-        '-hg', '--headgroups', nargs='?', default='martini_heads', 
+        '-hg', '--headgroups', nargs='?', default='martini_heads', type=str,
         help='the selection name in [selections.inp] used for the headgroups (default=martini_heads)',
         )
     optional_grp.add_argument(
-        '-tg', '--tailgroups', nargs='?', default='martini_tails', 
+        '-tg', '--tailgroups', nargs='?', default='martini_tails', type=str,
         help='the selection name in [selections.inp] used for the tails (default=martini_tails)',
         )
-    #TODO Use this instead of the hardcoded block in leaflets.
     optional_grp.add_argument(
         '-lg', '--linkergroups', nargs='?', default='martini_linkers', 
+        type=str,
         help='the selection name in [selections.inp] used for the linkers (default=martini_linkers)',
         )
     optional_grp.add_argument(
-        '-eg', '--exclusiongroups', nargs='?', default='martini_proteins', 
+        '-eg', '--exclusiongroups', nargs='?', default='martini_proteins',
+        type=str,
         help='the selection name in the [selections.inp] used for the exclusions (default=martini_proteins)',
         )
     
     optional_grp.add_argument(
-        '-res', '--resolution', nargs='?', default=0.5,
+        '-res', '--resolution', nargs='?', default=0.5, type=float,
         help='the binning resolution in the same units as the reference file (default=0.5)',
         )
     optional_grp.add_argument(
-        '-hres', '--hyper_resolution', nargs='?', default=0.5,
+        '-hres', '--hyper_resolution', nargs='?', default=0.5, type=float,
         help='blurs the coordinates by a fraction of the bin dimension (default=0.5)',
         )
     optional_grp.add_argument(
-        '-rd', '--recursion_depth', nargs='?', default=10,
+        '-rd', '--recursion_depth', nargs='?', default=10, type=int,
         help='amount of iterations for forced segmentation (default=10; 0 is off)',
         )
     optional_grp.add_argument(
-        '-fs', '--force_segmentation', nargs='?', default=20,
+        '-fs', '--force_segmentation', nargs='?', default=20, type=float,
         help='forces segmentation within set radius, the units are the same as in the reference file (default=20)',
         )
     optional_grp.add_argument(
-        '-fi', '--force_info', nargs='?', default=False, 
+        '-fi', '--force_info', nargs='?', default=False, type=bool,
         help='set force segmentation information printing True/False (default=False)',
         )
     optional_grp.add_argument(
-        '-min', '--minimum_size', nargs='?', default=50,
+        '-min', '--minimum_size', nargs='?', default=50, type=int,
         help='the minimum size of a segment in the amount of beads (default=50)',
         )
     optional_grp.add_argument(
-        '-b', '--begin', nargs='?', default=0, 
+        '-b', '--begin', nargs='?', default=0, type=int,
         help='set starting frame (default=0)',
         )
     optional_grp.add_argument(
-        '-e', '--end', nargs='?', default=None, 
+        '-e', '--end', nargs='?', default=None, type=int,
         help='set end frame (default=None)',
         )
     optional_grp.add_argument(
-        '-s', '--stride', nargs='?', default=1, 
+        '-s', '--stride', nargs='?', default=1, type=int,
         help='set stride for reading trajectory (default=1)',
         )
     optional_grp.add_argument(
-        '-nt', '--threads', nargs='?', default=auto_threads,
+        '-nt', '--threads', nargs='?', default=auto_threads, type=int,
         help='the maximum number of threads available (detected={})'.format(auto_threads),
         )
     optional_grp.add_argument(
-        '-bs', '--bit_size', nargs='?', default='uint32', 
+        '-bs', '--bit_size', nargs='?', default='uint32', type=str,
         help='set cluster array bit size (default=uint32)',
         )
-    optional_grp.add_argument(
-        '-p', '--plotting', nargs='?', default=False, 
-        help='turn on plots for testing (default=False)',
-        )
-    optional_grp.add_argument(
-        '-rp', '--reduce_points', nargs='?', default=1, 
-        help='set the stride in points for plotting (default=1)',
-        )
+    # optional_grp.add_argument(
+    #     '-p', '--plotting', nargs='?', default=False, 
+    #     help='turn on plots for testing (default=False)',
+    #     )
+    # optional_grp.add_argument(
+    #     '-rp', '--reduce_points', nargs='?', default=1, 
+    #     help='set the stride in points for plotting (default=1)',
+    #     )
     #TODO Change this so its called segmentations
     optional_grp.add_argument(
-        '-o', '--output', nargs='?', default='clusters', 
+        '-o', '--output', nargs='?', default='clusters', type=str,
         help='change segmentation array name (default=clusters), changing this setting breaks the program',
         )
     optional_grp.add_argument(
-        '-v', '--verbose', nargs='?', default=False, 
+        '-v', '--verbose', nargs='?', default=False, type=bool,
         help='set verbose True/False (default=False)',
         )
     optional_grp.add_argument(
@@ -145,6 +190,10 @@ def read_selections(args):
         The MDAnalysis selection syntax for the given selections is added to the NameSpace.
 
     """
+    # Use and write default input if the input file does not exist.
+    if not os.path.isfile(args.selections_input):
+        write_default_input(args.selections_input)
+        
     selection_headers = (args.headgroups, args.tailgroups, 
                          args.linkergroups, args.exclusiongroups)
     selection_header_patterns = ['[{}]'.format(x) for x in selection_headers]
@@ -158,7 +207,7 @@ def read_selections(args):
             else:
                 raise IndexError('{} could not be found in {}'.format(selection_header_pattern[1:-1], args.selections_input))
             
-    args.heads_selection_query = selection_strings[0]
+    args.headgroups_selection_query = selection_strings[0]
     args.tails_selection_query = selection_strings[1]
     args.linkers_selection_query = selection_strings[2]
     args.exclusions_selection_query = selection_strings[3]
