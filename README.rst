@@ -15,7 +15,7 @@ MDVoxelClustering
 
 Using neighbour clustering in voxelspace for fast and consistant spatial and temporal clustering.
 
-This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelClustering combines nieghbour clustering with a voxel mask of set resolution (default 0.5 nm). Forced-segmentation is turned on by default and assigns particles to clusers if they were unassigned. This happens within a 2 nm cutoff in an iterative manner. Finally there is a minimum cluster size of 50 particles to prevent clutter. For now the software has mainly been tested on CG Martini lipid assemblies with or without embedded proteins, though it probably works even better on atomistic simulations due to the higher amount of atoms that can be binned. If working with atomistic systems, you can probably turn off hyper-resolution in the input file.
+This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelClustering combines neighbour clustering with a voxel mask of set resolution (default 0.5 nm). Forced-segmentation is turned on by default and assigns particles to clusters if they were unassigned. This happens within a 2 nm cutoff in an iterative manner. Finally there is a minimum cluster size of 50 particles to prevent clutter. If working with atomistic systems, you can probably turn off hyper-resolution (set force_radius and recursion_depth to 0) using the appropriate flags.
 
 .. image:: https://user-images.githubusercontent.com/1488903/61180809-e43cdd80-a61c-11e9-91d7-7d13539c9c16.png
 
@@ -23,23 +23,24 @@ This software has been developed to allow for a higher selection syntax than ato
 
 Features
 --------
-* v0.9 is a beta build and segmentation should be checked by eye. High throughput is not adviced yet. Exmple input files for CG lipid systems are supplied. They can be easily adapted to your system by quickly following the steps in the instructions.
-* Voxel based neighbour clustering under rectangular periodic boudaries
-* Fast contour clustering
+* v0.99 is a stable beta build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivilant) are required for successful segmentation. An example of the design features.
+* Voxel based neighbour segmentation under all perdidic boundary conditions
+* Fast contour segmentation
 * Compatible with most MD file formats due to its tight link to MDAnalysis
-* Consistent clustering over time on trajectories of any size
-* Compatible with VMD using standard visualization files
-* Membrane leaflet recognition of lipids of most topologies
+* Consistent segmentation over time on trajectories
+* Compatible with VMD using standard visualization files (python compiled VMD)
+* Membrane leaflet assignment of lipids of most topologies
     - Bilayers
     - Vesicles
     - Inverted hexagonal phase
     - Membrane thethers
     - Complex lipids formulations including cholesterol
     - Proteins
-    - Up to millions of beads in seconds per frame
+    - Up to millions of beads per frame (possibly billions)
+    
 Instructions
 --------
-Some short instructions on using the example files on a CG lipid containing system.
+First we will discribe how to install MDVoxelSegmentation and perform segmentation on a GRO and XTC file using only the default settings (CG Martini lipid system).
 
 Installation
 ************
@@ -51,23 +52,21 @@ Then move into the cloned folder and type:
 
 :code:`pip install -e .`
 
-Setting up our input file for CG leaflet segmentation
-******************************************************
-Example files for leaflet clustering and VMD visualization can be found in the `example_inputs` folder.
+:code:`. ~/.bashrc`
 
-The basic is that we set the correct path to 'our.tpr and 'our.gro'/'our.xtc' in the 'clustering_input.py' file. This is best done by making a copy of this file into an anlysis direcotry. The paths are set directly at the top of the file. We also need to set the amount of threads we want to use, by default this is set to 12. The trajectory should contain at least as many frames as the amount of threads we set. Multithreading for now is just chunking your trajectory in pieces and handling them independently. Therefore memory consumption roughly scales linear with the amount of threads.
+:code:`mdvseg -h`
 
-Running the segmentation and creating sensible output
-******************************************************
-If 'mdvoxelclustering' is installed in our local python3 environment, we can run the clustering by executing the 'clustering_input.py' in our terminal:
+Default Segmentation
+***************
+By placing an alias in the :code:`~/.bashrc` MDVoxelSegmentation can be used by typing :code:`mdvseg` in the terminal. To finalize the install you have to either resource your :code:`~/.basrch` (:code:`. ~/.bashrc`) or relaunching your terminal. To perform default segmentation on a GRO and XTC file containing a CG Martini system you have to only specify the GRO and XTC file.
 
-:code:`python clustering_input.py`
+:code:`mdvseg -f path_to_your.gro -x path_to_your.xtc`
 
-In the bottom of the 'clustering_input.py' we can see why this works. The input_file itself runs the necessary python functions to perform leaflet segmentation and then improves the raw output by running a consistent id algorithm. Finally our segments will be plotted in 'clusters_over_time.png' as a graph and stored in 'clusters_ordered.npy' as a compressed numpy array. Some other files are created which are mainly used for plotting right now. You do not need to worry about those for now and just take a look at the created graph. Maybe you can already spot what is going on. The graph is a walking average of the cluster atom count, where grey lines indicate interactions between segments. The hue of the vertical line indicates the relative amount of particles in the system which participate in that interaction.
+The final segmentation assignment will be written to :code:`ordered_clusters.npy`. This file can be used using numpy in python to perform the required analysis.
 
 VMD visualization
 ******************
-For futher visualization in VMD we need to add 'our.gro' and 'our.xtc' path to 'vmd_clusters_visualization.py'. These entries are somehwere halfway the file... (sorry). We also need to make sure that we have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this out yourself, though I asked the developers to support anyone asking for such compilation and they said yes! So just send an e-mail to the VMD mailing list if you would need it. If we have the right falvour of VMD, all we need to type next is:
+For futher visualization in VMD we need to add 'our.gro' and 'our.xtc' path to 'vmd_clusters_visualization.py'. We also need to make sure that we have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this out yourself, though I asked the developers to support anyone asking for such compilation and they said yes! So just send an e-mail to the VMD mailing list if you would need it. If we have the right flavour of VMD, all we need to type next is:
 
 :code:`vmd -e vmd_clusters_visualization.vmd`
 
