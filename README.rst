@@ -109,7 +109,7 @@ A small glimps of what we are workin on with the pores. As you can see we can id
 
 Credits
 ---------
-Bart M. H. Bruininks & Albert Thie
+Bart M. H. Bruininks, Albert Thie, Paulo C. T. de Souza, Tsjerk A. Wassenaar, Shirin Faraji & Siewert J. Marrink
 
 Tools used in rendering this package:
 
