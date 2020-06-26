@@ -23,7 +23,7 @@ This software has been developed to allow for a higher selection syntax than ato
 
 Features
 --------
-* v0.99 is a stable beta build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivilant) are required for successful segmentation. An example of the design features.
+* v0.99 is a stable beta build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivilant) are required for successful segmentation.
 * Voxel based neighbour segmentation under all perdidic boundary conditions
 * Fast contour segmentation
 * Compatible with most MD file formats due to its tight link to MDAnalysis
