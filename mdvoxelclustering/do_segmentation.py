@@ -14,6 +14,7 @@ import MDAnalysis as mda
 from functools import partial
 from mdvoxelclustering import argparser
 from mdvoxelclustering import leaflets
+from mdvoxelclustering import settests
 
      
 
@@ -54,6 +55,9 @@ def main():
     
     #TODO Writing the ouput at once, this should become a per frame append!
     np.save(args.output, segments.astype(args.bit_size))
+
+    #TODO Segment the output over time (handle the user input in the argparser)
+    settests.main()
     
 if __name__=='__main__':
     main()
