@@ -40,8 +40,6 @@ Features
     
 Instructions
 --------
-First we will discribe how to install MDVoxelSegmentation and perform segmentation on a GRO and XTC file using only the default settings (CG Martini lipid system).
-
 Installation
 ************
 Fork the development branch using:
