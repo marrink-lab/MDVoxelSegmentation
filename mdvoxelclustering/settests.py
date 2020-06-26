@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-identity_threshold = 0.5
+identity_threshold = 0.618 #Golden ratio ;)
 cluster_mutations = {}
 
 
@@ -226,11 +226,10 @@ def sort_clusters(data):
         newcluster = deque()
         plotvariables = []
         frame_set = set(frame)
-
         # Make sure that the first entry in the newcluster dequeue is always 0
         if 0 not in frame_set:
             newcluster.append(set())
-        for cluster in frame_set:     
+        for cluster in frame_set:   
             newcluster.append(set(np.where(frame == cluster)[0]))  
         # I think this sort here is pretty important since we do not want to 
             # take any risk to have a non zero cluster as the first...
