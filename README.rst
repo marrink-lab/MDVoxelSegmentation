@@ -4,13 +4,11 @@ MDVoxelClustering
 
 Using neighbour segmentation in voxelspace for fast and consistant spatial and temporal segmentation.
 
-This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelClustering combines neighbour segmentation with a voxel mask of set resolution (default 0.5 nm). Forced-segmentation is turned on by default and assigns particles to segments if they were unassigned. This happens within an cutoff in an iterative manner (default 2 nm). Finally there is a minimum cluster size to prevent clutter (default 50 particles). If working with atomistic systems, you can probably turn off hyper-resolution using the appropriate flags.
-
-Force segmentation is known to be very slow at the moment and it is reccommended to turn it off unless you want to have the absolute best segmentation possible (-fs 0 turns it off).
-
-.. image:: https://user-images.githubusercontent.com/1488903/61180809-e43cdd80-a61c-11e9-91d7-7d13539c9c16.png
+This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelClustering combines neighbour segmentation with a voxel mask, and makes tracking segments over time possible at high quality.
 
 * Open software: Apache 2 license
+
+.. image:: https://user-images.githubusercontent.com/1488903/61180809-e43cdd80-a61c-11e9-91d7-7d13539c9c16.png
 
 Features
 --------
@@ -37,11 +35,11 @@ Fork the development branch using:
 
 :code:`git clone [branch_clone_url]`
 
-Then move into the cloned folder and type:
+Move into the cloned folder and type:
 
 :code:`pip install -e .`
 
-Add an alias in your :code:`~/.bashrc` and restart/resource:
+Add an alias in your :code:`~/.bashrc` and restart/resource, finally run mdvseg with the help flag:
 :code:`alias mdvseg=python /path/to/mdvclustering_package/mdvclustering/do_segmentation.py`
 
 :code:`source ~/.bashrc`
