@@ -2,7 +2,7 @@
 MDVoxelClustering
 ===============================
 
-Using neighbour segmentation in voxelspace for fast and consistant spatial and temporal clustering.
+Using neighbour segmentation in voxelspace for fast and consistant spatial and temporal segmentation.
 
 This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelClustering combines neighbour segmentation with a voxel mask of set resolution (default 0.5 nm). Forced-segmentation is turned on by default and assigns particles to segments if they were unassigned. This happens within an cutoff in an iterative manner (default 2 nm). Finally there is a minimum cluster size to prevent clutter (default 50 particles). If working with atomistic systems, you can probably turn off hyper-resolution using the appropriate flags.
 
