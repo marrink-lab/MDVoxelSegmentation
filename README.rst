@@ -41,11 +41,11 @@ Move into the cloned folder and type:
 
 Add an alias in your :code:`~/.bashrc` and restart/resource, finally run mdvseg with the help flag:
 
-:code:`alias mdvseg=python /path/to/mdvclustering_package/mdvclustering/do_segmentation.py`
+:code:`alias mdvseg=python /path/to/mdvclustering_package/mdvclustering/do_segmentation.py` (add to :code:`~/.bashrc`)
 
-:code:`source ~/.bashrc`
+:code:`source ~/.bashrc` (run in terminal)
 
-:code:`mdvseg -h`
+:code:`mdvseg -h` (run in terminal)
 
 Basic Segmentation
 ***************
