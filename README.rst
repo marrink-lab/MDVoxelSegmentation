@@ -96,7 +96,7 @@ For the cholesterol fli-flopping we use non iterative forced clustering (current
 .. image:: https://user-images.githubusercontent.com/1488903/75491447-4a148480-59b6-11ea-92ef-6faf0c646333.png
 **Single frame toroidal and/or water pore detection in a bilayer**
 
-A small glimps of what we are workin on with the pores. As you can see we can identify both toroidal (left) and water only pores (right). The frames were handpicked for we looked for specifically for a toroidal and water pore. The expected end goal would be the consistent identification of all pores in membranes. Just as we do for leaflets. The pore tracking should be combinable with the leaflet identification, allowing for segmentation using the pores as exclusion mask. At the same time the pores would just have their own segmentation array which can be used for later analysis and visualization. This allos for leaflet identification, even in the presence of water and/or toroidal pores.
+A small glimps of what we are workin on with the pores. As you can see we can identify both toroidal (left) and water only pores (right). The frames were handpicked for we looked specifically for a toroidal and water pore. The expected end goal would be the consistent identification of all pores in membranes. Just as we do for leaflets. The pore tracking should be combinable with the leaflet identification, allowing for segmentation using the pores as exclusion mask. At the same time the pores would just have their own segmentation array which can be used for later analysis and visualization. This allows for leaflet identification, even in the presence of water and/or toroidal pores.
 
 Credits
 ---------
