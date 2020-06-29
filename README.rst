@@ -40,6 +40,7 @@ Move into the cloned folder and type:
 :code:`pip install -e .`
 
 Add an alias in your :code:`~/.bashrc` and restart/resource, finally run mdvseg with the help flag:
+
 :code:`alias mdvseg=python /path/to/mdvclustering_package/mdvclustering/do_segmentation.py`
 
 :code:`source ~/.bashrc`
