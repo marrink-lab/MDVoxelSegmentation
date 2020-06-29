@@ -2,20 +2,11 @@
 MDVoxelClustering
 ===============================
 
-.. image:: https://img.shields.io/pypi/v/mdvoxelclustering.svg
-        :target: https://pypi.python.org/pypi/mdvoxelclustering
+Using neighbour segmentation in voxelspace for fast and consistant spatial and temporal clustering.
 
-.. image:: https://img.shields.io/travis/BartBruininks/mdvoxelclustering.svg
-        :target: https://travis-ci.org/BartBruininks/mdvoxelclustering
+This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelClustering combines neighbour segmentation with a voxel mask of set resolution (default 0.5 nm). Forced-segmentation is turned on by default and assigns particles to segments if they were unassigned. This happens within an cutoff in an iterative manner (default 2 nm). Finally there is a minimum cluster size to prevent clutter (default 50 particles). If working with atomistic systems, you can probably turn off hyper-resolution using the appropriate flags.
 
-.. image:: https://readthedocs.org/projects/mdvoxelclustering/badge/?version=latest
-        :target: https://readthedocs.org/projects/mdvoxelclustering/?badge=latest
-        :alt: Documentation Status
-
-
-Using neighbour clustering in voxelspace for fast and consistant spatial and temporal clustering.
-
-This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelClustering combines neighbour clustering with a voxel mask of set resolution (default 0.5 nm). Forced-segmentation is turned on by default and assigns particles to clusters if they were unassigned. This happens within a 2 nm cutoff in an iterative manner. Finally there is a minimum cluster size of 50 particles to prevent clutter. If working with atomistic systems, you can probably turn off hyper-resolution (set force_radius and recursion_depth to 0) using the appropriate flags.
+Force segmentation is known to be very slow at the moment and it is reccommended to turn it off unless you want to have the absolute best segmentation possible (-fs 0 turns it off).
 
 .. image:: https://user-images.githubusercontent.com/1488903/61180809-e43cdd80-a61c-11e9-91d7-7d13539c9c16.png
 
@@ -50,17 +41,20 @@ Then move into the cloned folder and type:
 
 :code:`pip install -e .`
 
-:code:`. ~/.bashrc`
+Add an alias in your :code:`~/.bashrc` and restart/resource:
+:code:`alias mdvseg=python /path/to/mdvclustering_package/mdvclustering/do_segmentation.py`
+
+:code:`source ~/.bashrc`
 
 :code:`mdvseg -h`
 
-Default Segmentation
+Basic Segmentation
 ***************
-By placing an alias in the :code:`~/.bashrc` MDVoxelSegmentation can be used by typing :code:`mdvseg` in the terminal. To finalize the install you have to either resource your :code:`~/.basrch` (:code:`. ~/.bashrc`) or relaunching your terminal. To perform default segmentation on a GRO and XTC file containing a CG Martini system you have to only specify the GRO and XTC file.
+To perform default segmentation on a GRO and XTC file containing a coarse grain Martini system, you have to specify the GRO and XTC file. The final segmentation assignment will be written to :code:`ordered_clusters.npy`. This file can be used using numpy in python to perform the required analysis. 
 
 :code:`mdvseg -f path_to_your.gro -x path_to_your.xtc`
 
-The final segmentation assignment will be written to :code:`ordered_clusters.npy`. This file can be used using numpy in python to perform the required analysis.
+It is mainly the force segmentation flag (-fs) and it associated recursion depth (-rd) which have a big impact on performance turning force segmentation off (-fs 0) is often a good idea, if perfect final quality is not needed. By default `mdvseg` generates its own `selections.inp` which should cover all basic lipids in Martini. However, if some definitions are missing, you can always manually add them to the `selections.inp` (mdvseg does not overwrite an already present `selection.inp`). 
 
 VMD visualization
 ******************
