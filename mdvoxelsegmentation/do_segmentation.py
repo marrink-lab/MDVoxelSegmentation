@@ -12,9 +12,9 @@ import numpy as np
 import multiprocessing as mp
 import MDAnalysis as mda
 from functools import partial
-from mdvoxelclustering import argparser
-from mdvoxelclustering import leaflets
-from mdvoxelclustering import settests
+from mdvoxelsegmentation import argparser
+from mdvoxelsegmentation import leaflets
+from mdvoxelsegmentation import settests
 
      
 

@@ -1,4 +1,5 @@
 *.swp
+mdvoxelsegmentation.egg-info/
 .ipynb_checkpoints/
 test_files/
 __pycache__/
