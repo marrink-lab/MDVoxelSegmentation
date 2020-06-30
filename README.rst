@@ -1,10 +1,10 @@
 ===============================
-MDVoxelClustering
+MDVoxelSegmentation
 ===============================
 
 Using neighbor segmentation in voxelspace for fast and consistent spatial and temporal segmentation.
 
-This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelClustering combines neighbor segmentation with a voxel mask, and makes tracking segments over time possible at high quality.
+This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelSegmentation combines multiple layers of neighbor segmentation with a voxel mask, and makes tracking segments over time possible at high quality.
 
 * Open software: Apache 2 license
 
@@ -41,7 +41,7 @@ Move into the cloned folder and type:
 
 Add an alias in your :code:`~/.bashrc` and restart/resource, finally run mdvseg with the help flag:
 
-:code:`alias mdvseg=python /path/to/mdvclustering_package/mdvclustering/do_segmentation.py` (add to :code:`~/.bashrc`)
+:code:`alias mdvseg=python /path/to/mdvsegmentation_package/mdvsegmentation/do_segmentation.py` (add to :code:`~/.bashrc`)
 
 :code:`source ~/.bashrc` (run in terminal)
 
@@ -65,7 +65,7 @@ Our first 32 segments will automatically be assigned a color and material/style.
 
 Post some feedback in our issues
 *********************************
-We would love to see how you used MDVoxelClustering in your projects and are always happy to see cool systems and screenshots. Just upload them to an issue of this repository. There is also place for comments on usability and bugs. 
+We would love to see how you used MDVoxelSegmentation in your projects and are always happy to see cool systems and screenshots. Just upload them to an issue of this repository. There is also place for comments on usability and bugs. 
 
 How to contribute
 ******************
