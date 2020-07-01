@@ -89,7 +89,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
     # Make an empty array which has one int32 for every frame.
     segments_per_frame = np.zeros(segments_over_time.shape[0], dtype='int32') 
     # Fill the array with the amount of non-zero segments in each frame.
-    segments_per_frame[:] = [len(np.unique(frame))-1 for frame in segments_over_time]
+    segments_per_frame[:] = [len(np.unique(frame)) - 1 for frame in segments_over_time]
 
     ## Plotting the results.
     # Making an empty plot.
