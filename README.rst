@@ -18,7 +18,7 @@ Features
 * Compatible with most MD file formats due to its tight link to MDAnalysis
 * Consistent segmentation over time on trajectories
 * Compatible with VMD using standard visualization files (python compiled VMD)
-* A wide range of exmples (bottom of this readme)
+* A wide range of examples (bottom of this readme)
 * Membrane leaflet assignment of lipids of most topologies
     - Bilayers
     - Vesicles
