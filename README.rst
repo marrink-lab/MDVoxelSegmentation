@@ -18,6 +18,7 @@ Features
 * Compatible with most MD file formats due to its tight link to MDAnalysis
 * Consistent segmentation over time on trajectories
 * Compatible with VMD using standard visualization files (python compiled VMD)
+* A wide range of exmples (bottom of this readme)
 * Membrane leaflet assignment of lipids of most topologies
     - Bilayers
     - Vesicles
@@ -68,6 +69,44 @@ For futher visualization in VMD we need to add 'our.gro' and 'our.xtc' path to '
 :code:`vmd -e vmd_clusters_visualization.vmd`
 
 The first 32 segments will automatically be assigned a color and material/style. They can be used to make selections using 'user your_segment' in the VMD selection syntax. These representations should automatically be set to update every frame. By typing 'hide' in the VMD terminal, we can easily turn off all segment representations. Segment 0 always contains everything which was not assigned a segment and is hidden. 'user' 32 always shows segment 32 to 1000, to show all segments which might have a very high index. The downside is that all segments from 32 onward have the same color.
+
+Useful things to know
+*********************
+Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should work without needing much prior knowledge. However, to make the most out of the created :code:`clusters_ordered.npy` it is useful to know some python (numpy, MDAnalysis, Matplotlib). If you are working with atomistic systems and have to specify your own headgroups/linkers/tails you need to known what those names are from your PDB/GRO and make your own selection entries in the :code:`selections.inp`. To :code:`selections.inp` uses the MDAnalysis selection syntax (very close to the VMD selection syntax). Below are some basic lines of code to help you on your way with using the segmentation data.
+
+*A basic python example to plot the number of segments over time*
+
+.. code-block:: python
+    ## Importing numpy and matplotlib.
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    ## Loading the segmentation data.
+    segments_over_time = np.load('clusters_ordered.npy')
+
+    ## Calculating the amount of segments in each frame.
+    # Make an empty array which has one int32 for every frame.
+    segments_per_frame = np.zeros(segments_over_time.shape[0], dtype='int32') 
+    # Fill the array with the amount of non-zero segments in each frame.
+    segments_per_frame[:] = [len(np.unique(frame))-1 for frame in segments_over_time]
+
+    ## Plotting the results.
+    # Making an empty plot.
+    fig, ax = plt.subplots()
+    # Adding required data to plot.
+    ax.plot(segments_per_frame)
+    # Set ticks to a sensible regime.
+    start, end = [round(limit) for limit in ax.get_ylim()]
+    ax.yaxis.set_ticks(np.arange(start, end + 1, 1))
+    # Add labels to axes
+    ax.set_xlabel('Frame count')
+    ax.set_ylabel('Number of segments')
+    # Save the plot.
+    fig.savefig('amount_of_segments_over_time.png', dpi=300)
+    # Usually people don't like it if you pop windows, however
+    #  if you would like to automatically show the result uncomment
+    #  the following line.
+    #fig.show()
 
 Post some feedback in our issues
 *********************************
