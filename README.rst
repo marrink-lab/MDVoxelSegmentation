@@ -133,7 +133,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
 
     ## Then run the mdvseg using the just created selections. Hyper resolution can 
     ##  be turned off, for we have more than enough beads due to our atomistic resolution!
-    $ mdvseg -f your.gro -x your.xtc -hg charmm_linkers -lg charmm_linkers -tg charmm_tails -hres 0
+    $ mdvseg -f your.gro -x your.xtc -hg charmm_heads -lg charmm_linkers -tg charmm_tails -hres 0
 
 Post some feedback in our issues
 *********************************
