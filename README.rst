@@ -99,7 +99,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
     # Set ticks to a sensible regime.
     start, end = [round(limit) for limit in ax.get_ylim()]
     ax.yaxis.set_ticks(np.arange(start, end + 1, 1))
-    # Add labels to axes
+    # Add labels to axes.
     ax.set_xlabel('Frame count')
     ax.set_ylabel('Number of segments')
     # Save the plot.
