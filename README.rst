@@ -41,7 +41,7 @@ Move into the cloned folder and type:
 
 Add an alias in your :code:`~/.bashrc` and restart/resource, finally run mdvseg with the help flag:
 
-:code:`alias mdvseg=python /path/to/mdvsegmentation_package/mdvsegmentation/do_segmentation.py` (add to :code:`~/.bashrc`)
+:code:`alias mdvseg="python /path/to/mdvsegmentation_package/mdvsegmentation/do_segmentation.py"` (add to :code:`~/.bashrc`)
 
 :code:`source ~/.bashrc` (run in terminal)
 
@@ -49,9 +49,15 @@ Add an alias in your :code:`~/.bashrc` and restart/resource, finally run mdvseg 
 
 Basic Segmentation
 ***************
-To perform default segmentation on a GRO and XTC file containing a coarse grain Martini system, you have to specify the GRO and XTC file. The final segmentation assignment will be written to :code:`ordered_clusters.npy`. This file can be used using numpy in python to perform the required analysis. 
+To perform default segmentation on a GRO and XTC file containing a coarse grain Martini system, you have to specify the GRO and XTC file. The final segmentation assignment will be written to :code:`clusters_ordered.npy`. This file can be used using numpy in python to perform the required analysis. 
 
 :code:`mdvseg -f path_to_your.gro -x path_to_your.xtc`
+
+MDAnalysis will probably throw some warnings stating that it cannot estimate the masses for you coarse grain particles. This cannot be suppressed but it harmless. A useful graph of your segmentation can be made by running in the output folder:
+
+:code:`python /path/to/mdvoxelsegmentation_package/mdvoxelsegmentation/graphing.py`
+
+The graphing is still under construction and might change over time, therefore it is not included through the argparser.
 
 It is mainly the force segmentation flag (-fs) and it associated recursion depth (-rd) which have a big impact on performance. Turning force segmentation off (-fs 0) is often a good idea if perfect final quality is not needed. By default `mdvseg` generates its own `selections.inp` which should cover all basic lipids in Martini. However, if some definitions are missing, you can always manually add them to the `selections.inp` (mdvseg does not overwrite an already present `selection.inp`).
 
