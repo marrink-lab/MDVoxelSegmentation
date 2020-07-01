@@ -112,6 +112,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
 *An atomistic example for DOPE lipids with the CHARMM force field*
 
 .. code-block:: python
+
     $ vi selections.inp
     ## Create an empty `selections.inp` and add the following lines, the selection 
     ##  syntax should always be one line and directly follow its header description.
