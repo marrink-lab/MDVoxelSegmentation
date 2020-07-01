@@ -72,7 +72,7 @@ The first 32 segments will automatically be assigned a color and material/style.
 
 Useful things to know
 *********************
-Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should work without needing much prior knowledge. However, to make the most out of the created :code:`clusters_ordered.npy` it is useful to know some python (numpy, MDAnalysis, Matplotlib). If you are working with atomistic systems and have to specify your own headgroups/linkers/tails you need to known what those names are from your PDB/GRO and make your own selection entries in the :code:`selections.inp`. To :code:`selections.inp` uses the MDAnalysis selection syntax (very close to the VMD selection syntax). Below are some basic lines of code to help you on your way with using the segmentation data.
+Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should work without needing much prior knowledge. However, to make the most out of the created :code:`clusters_ordered.npy` it is useful to know some python (numpy, MDAnalysis, Matplotlib). If you are working with atomistic systems and have to specify your own headgroups/linkers/tails, you need to known what the relevant names are from your PDB/GRO and make your own selection entries in the :code:`selections.inp`. The :code:`selections.inp` uses the MDAnalysis selection syntax (very close to the VMD selection syntax). Below are some basic lines of code to help you on your way with using the segmentation data. First we will give an example for some basic plotting, followed by an example for an atomistic CHARMM :code:`selections.inp` for DOPE lipids.
 
 *A basic python example to plot the number of segments over time*
 
@@ -108,6 +108,31 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
     #  if you would like to automatically show the result uncomment
     #  the following line.
     #fig.show()
+
+*An atomistic example for DOPE lipids with the CHARMM force field*
+
+.. code-block:: python
+    $ vi selections.inp
+    ## Create an empty `selections.inp` and add the following lines, the selection 
+    ##  syntax should always be one line and directly follow its header description.
+
+    # It is not bad to include the linkers also in the headgroups, but this is often 
+    #  not important.
+    [charmm_heads]
+    (name N P C12 C11 O11 O12 O13 O14)
+
+    [charmm_linkers]
+    (name C1 C2 O21 C21 C3 O31 C31)
+
+    # Not adding the first carbons of the tail can improve performance, but again, 
+    #  this is usually not important.
+    [charmm_tails]
+    (name C22 C23 C24 C25 C26 C27 C28 C29 C210 C211 C212 C213 C214 C215 C216 C217 C218 C32 C33 C34 C35 C36 C37 C38 C39 C310 C311 C312 C313 C314 C315 C316 C317 C318)
+
+
+    ## Then run the mdvseg using the just created selections. Hyper resolution can 
+    ##  be turned off, for we have more than enough beads due to our atomistic resolution!
+    $ mdvseg -f your.gro -x your.xtc -hg charmm_linkers -lg charmm_linkers -tg charmm_tails -hres 0
 
 Post some feedback in our issues
 *********************************
