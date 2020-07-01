@@ -109,7 +109,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
     #  the following line.
     #fig.show()
 
-*An atomistic example for DOPE lipids with the CHARMM force field*
+*An atomistic segmentation example for DOPE lipids with the CHARMM force field*
 
 .. code-block:: python
 
