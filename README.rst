@@ -33,7 +33,7 @@ Installation
 ************
 Fork the development branch using:
 
-:code:`git clone [branch_clone_url]`
+:code:`git clone https://github.com/BartBruininks/MDVoxelSegmentation.git`
 
 Move into the cloned folder and type:
 
