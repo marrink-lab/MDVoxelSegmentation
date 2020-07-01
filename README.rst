@@ -77,6 +77,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
 *A basic python example to plot the number of segments over time*
 
 .. code-block:: python
+
     ## Importing numpy and matplotlib.
     import numpy as np
     import matplotlib.pyplot as plt
