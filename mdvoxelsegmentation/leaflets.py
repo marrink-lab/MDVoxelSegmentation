@@ -88,7 +88,7 @@ def volume_segmentation(atomgroup, headgroups_mask, exclusions_mask, args):
 
 def connected_components_segmentation(selection_headgroups_atomgroup, 
                                       selection_linkers_atomgroup,
-                                      exclusions, 
+                                      selection_exclusions_atomgroup, 
                                       args):
     """
     Returns a single frame segmentation array with basic connected components
@@ -172,12 +172,11 @@ def connected_components_segmentation(selection_headgroups_atomgroup,
             # Using the atom indices to write the segment in the
             #   universe.atoms array.
             out_array[complete_selection.ix] = segment+1
-
     
     # Tries to segment non segmented lipids to the segments surrounding their
-    #  headgroups. Segment 0 is excluded.    
-    
-    if args.force_segmentation:
+    #  headgroups. Segment 0 is excluded.        
+    if selection_linkers_atomgroup and args.force_segmentation:
+        print(args.linkers_selection_query)
         seg.iterative_force_clustering(
             selection_linkers_atomgroup, 
             int(args.force_segmentation*(2/3)), 
@@ -348,12 +347,10 @@ def leaflet_segmentation(
             # Using the atom indices to write the segment in the
             #   universe.atoms array.
             out_array[leaflet_selection.ix] = segment+1
-
     
     # Tries to segment non segmented lipids to the segments surrounding their
-    #  headgroups. Segment 0 is excluded.    
-    
-    if args.force_segmentation:
+    #  headgroups. Segment 0 is excluded.        
+    if selection_linkers_atomgroup and args.force_segmentation:
         seg.iterative_force_clustering(
             selection_linkers_atomgroup, 
             int(args.force_segmentation*(2/3)), 
@@ -373,7 +370,6 @@ def leaflet_segmentation(
                       non_segmented_atoms, args.force_segmentation))
 
     return out_array
-
     
 
 def mf_leaflet_segmentation(universe,
@@ -429,8 +425,8 @@ def mf_leaflet_segmentation(universe,
             segmentation = connected_components_segmentation(
                 headgroups_selection, 
                 linkers_selection,
-                exclusions, 
-                args):
+                exclusions_selection, 
+                args)
         segments.append(segmentation)
         
     # This print is needed to get out of the same line as the loading bar of 
