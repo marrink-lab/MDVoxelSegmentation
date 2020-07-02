@@ -145,6 +145,8 @@ def connected_components_segmentation(selection_headgroups_atomgroup,
             exclusions_mask, 
             args,
             )
+    print('\n\nselection_headgroups_atomgroup {}'.format(selection_headgroups_atomgroup))
+    print('\nheadgroup_segments {}'.format(headgroups_segments))
     
     # Converting the voxel mask to selection atom indices.
     headgroups_atomgroups = seg.clusters2atomgroups(
@@ -152,6 +154,7 @@ def connected_components_segmentation(selection_headgroups_atomgroup,
             headgroups_mapping,
             selection_headgroups_atomgroup,
             )
+    print('\nheadgroups_atomgroups {}'.format(headgroups_atomgroups))
     
     # Using the atom indices to obtain residues in selection.
     headgroups_residuegroups = [
@@ -176,7 +179,6 @@ def connected_components_segmentation(selection_headgroups_atomgroup,
     # Tries to segment non segmented lipids to the segments surrounding their
     #  headgroups. Segment 0 is excluded.        
     if selection_linkers_atomgroup and args.force_segmentation:
-        print(args.linkers_selection_query)
         seg.iterative_force_clustering(
             selection_linkers_atomgroup, 
             int(args.force_segmentation*(2/3)), 
