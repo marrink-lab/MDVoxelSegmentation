@@ -86,6 +86,118 @@ def volume_segmentation(atomgroup, headgroups_mask, exclusions_mask, args):
     volume_segments = seg.set_clustering(explicit_matrix, nbox, exclusions_mask)
     return volume_segments, voxel2atoms, explicit_matrix
 
+def connected_components_segmentation(selection_headgroups_atomgroup, 
+                                      selection_linkers_atomgroup,
+                                      exclusions, 
+                                      args):
+    """
+    Returns a single frame segmentation array with basic connected components
+    segmentaion.
+    
+    Segments all connected components. It treats exclusions as a local stop, 
+    preventing segmentation past their position.
+    
+    Force segmentation can be used to segment all lipid residues which are not 
+    yet in a segment by picking the segment the residue is surrounded
+    by most within the specified range. Also takes a minimum segment
+    size in particles. Segments smaller than the cutoff will not be returned.
+
+    Parameters
+    ----------
+    selection_headgroups_atomgroup : MDAnalysis.atomgroup
+        The atomgroup used for connected components analysis.
+    exclusions : MDAnalysis.atomgroup
+        The atomgroup used as barrier for the connected components analysis.
+    args : namespace
+        All the arguments from the input argparsing.
+
+    Returns
+    -------
+    A single frame segmentation array.
+
+    """    
+    # Creating the exclusion mask for segmenting around the exclusions
+    #  this will be use to set the exclusion (flanking) pixels to touched
+    #  in the segmentation queue. Therefore they will act as a stop. But 
+    #  can be segmented themselves.
+    if selection_exclusions_atomgroup:
+        # Exclusion volume mask.
+        explicit_matrix_exclusions, _, nbox = seg.gen_explicit_matrix(
+            selection_exclusions_atomgroup, 
+            args.resolution, 
+            args.hyper_resolution,
+            )
+        # Exclusion contour (O) mask.
+        outward_contour_exclusions = seg.contour(
+                explicit_matrix_exclusions, nbox, span=1, inv=False
+                )
+        # Exclusion volume+contour(O) mask.
+        exclusions_mask = np.logical_or(explicit_matrix_exclusions,
+                                        outward_contour_exclusions)
+    else:
+        exclusions_mask = False
+        
+    # Segmenting the tail density for tail grouping excluding the
+    #  tail densities which are masked by headgroups.
+    headgroups_segments, headgroups_mapping, headgroups_mask = volume_segmentation(
+            selection_headgroups_atomgroup, 
+            False,
+            exclusions_mask, 
+            args,
+            )
+    
+    # Converting the voxel mask to selection atom indices.
+    headgroups_atomgroups = seg.clusters2atomgroups(
+            headgroups_segments,
+            headgroups_mapping,
+            selection_headgroups_atomgroup,
+            )
+    
+    # Using the atom indices to obtain residues in selection.
+    headgroups_residuegroups = [
+            headgroups_atomgroup.residues
+            for headgroups_atomgroup in headgroups_atomgroups
+            ]
+    
+    # Writing the segments, skipping 0.
+    out_array = np.zeros((len(selection_headgroups_atomgroup.universe.atoms)),
+                         dtype = args.bit_size)
+    for segment, segment_resid_group in enumerate(
+            headgroups_residuegroups):
+        # Satisfying minimum segment size.
+        complete_selection = segment_resid_group.atoms
+        # The minimum size is already satisfied and does not need to be
+        #  checked again.
+        if len(complete_selection) > args.minimum_size:
+            # Using the atom indices to write the segment in the
+            #   universe.atoms array.
+            out_array[complete_selection.ix] = segment+1
+
+    
+    # Tries to segment non segmented lipids to the segments surrounding their
+    #  headgroups. Segment 0 is excluded.    
+    
+    if args.force_segmentation:
+        seg.iterative_force_clustering(
+            selection_linkers_atomgroup, 
+            int(args.force_segmentation*(2/3)), 
+            out_array, 
+            np.unique(out_array), 
+            max_cutoff=args.force_segmentation, 
+            max_stop=args.recursion_depth, 
+            cutoff_increment=1, 
+            verbose=False)
+        
+        if args.force_info:
+            non_segmented_atoms = seg.non_clustered(
+                selection_headgroups_atomgroup,
+                out_array)
+            print('{} Non segmented particles after forced '
+                  'segmentation with a cutoff of {} Angstrom:'.format(
+                      non_segmented_atoms, args.force_segmentation))
+
+    return out_array
+    
 
 def leaflet_segmentation(
         selection_headgroups_atomgroup, 
@@ -110,7 +222,7 @@ def leaflet_segmentation(
     by most within the specified range. Also takes a minimum segment
     size in particles. Segments smaller than the cutoff will not be returned.
     """
-    # Generating the explicit matix of all headgroups for masking the 
+    # Generating the explicit matrix of all headgroups for masking the 
     #  lipid tail densities.
     headgroups_mask, headgroups_mapping, nbox = seg.gen_explicit_matrix(
         selection_headgroups_atomgroup, 
@@ -304,13 +416,23 @@ def mf_leaflet_segmentation(universe,
         sys.stdout.flush()
         
         # The actual segmenting of individual frames.
-        segmentation = leaflet_segmentation(headgroups_selection,
-                                            linkers_selection,
-                                            tails_selection,
-                                            exclusions_selection,
-                                            args,
-                                            )
+        # Leaflet segmentation
+        if headgroups_selection and tails_selection:
+            segmentation = leaflet_segmentation(headgroups_selection,
+                                                linkers_selection,
+                                                tails_selection,
+                                                exclusions_selection,
+                                                args,
+                                                )
+        # Connected components segmentation.
+        elif headgroups_selection and not tails_selection:
+            segmentation = connected_components_segmentation(
+                headgroups_selection, 
+                linkers_selection,
+                exclusions, 
+                args):
         segments.append(segmentation)
+        
     # This print is needed to get out of the same line as the loading bar of 
     #  the single frame leaflet segmentation.    
     #print() # Adds a newline to get out of the loading bar line.
