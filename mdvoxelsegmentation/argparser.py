@@ -42,13 +42,13 @@ def write_default_input(path):
 (name PO4 GL1 GL2 D1A D1B C1A C1B AM1 AM2 GM1 GM2 COO COOH) or (resname CHOL and name ROH) or (resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and name C1 C2 C3 P1 P2 P3) or (name BB)
 
 [martini_proteins]
-(name BB SC1 SC2 SC3 SC4)
+(name BB SC1 SC2 SC3 SC4 SC5)
 
 [martini_dna]
 (name BB1 BB2 SC1 SC2 SC3 SC4)
 
 [none]
-(False)
+False
 """
 )
     with open(path, 'w') as f:
