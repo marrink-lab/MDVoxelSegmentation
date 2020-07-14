@@ -427,6 +427,10 @@ def mf_leaflet_segmentation(universe,
                 linkers_selection,
                 exclusions_selection, 
                 args)
+        else:
+            raise ValueError('It appears your headgroup selection is empty, '
+                             'or something else is \ngoing wrong with your input '
+                             'specification.')
         segments.append(segmentation)
         
     # This print is needed to get out of the same line as the loading bar of 
