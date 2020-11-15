@@ -22,7 +22,8 @@ Features
 * Membrane leaflet assignment of lipids of most topologies
     - Bilayers
     - Vesicles
-    - Inverted hexagonal phase
+    - (Inverted) hexagonal
+    - Cubic
     - Membrane tethers
     - Complex lipids formulations including cholesterol
     - Proteins
@@ -141,7 +142,7 @@ We would love to see how you used MDVoxelSegmentation in your projects and are a
 
 How to contribute
 ******************
-If you are interested in joining this project after its initial release just post an issue, or better yet, send an email to b.m.h.bruininks@gmail.com. We are currently still filled with ideas to be implemented and all hands are welcome. Some of the open topics are in the issues. Anybody who contributes for a fair share will off course be included in future publications.
+If you are interested in joining this project after its initial release just post an issue, or better yet, send an email to bartbruininks@gmail.com. We are currently still filled with ideas to be implemented and all hands are welcome. Some of the open topics are in the issues. Anybody who contributes for a fair share will off course be included in future publications.
 
 Examples
 ---------
