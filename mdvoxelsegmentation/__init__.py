@@ -10,4 +10,5 @@ from . import antidisco
 from . import graphing
 from . import argparser
 from . import do_segmentation
+from . import water_pores
 #from . import identity
