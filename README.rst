@@ -12,7 +12,7 @@ This software has been developed to allow for a higher selection syntax than ato
 
 Features
 --------
-* v0.99 is a stable beta build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
+* v0.99a is a stable beta build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
 * Voxel based neighbour segmentation under all perdidic boundary conditions
 * Fast contour segmentation
 * Compatible with most MD file formats due to its tight link to MDAnalysis
@@ -57,7 +57,7 @@ To perform default segmentation on a GRO and XTC file containing a coarse grain 
 
 MDAnalysis will probably throw some warnings stating that it cannot estimate the masses for you coarse grain particles. This cannot be suppressed but it harmless. A useful graph of your segmentation can be made by running in the output folder:
 
-:code:`python /path/to/mdvoxelsegmentation_package/mdvoxelsegmentation/graphing.py`
+:code:`python /path/to/mdvoxelsegmentation_package/mdvoxelsegmentation/plotting.py`
 
 The graphing is still under construction and might change over time, therefore it is not included through the argparser.
 
@@ -65,7 +65,7 @@ It is mainly the force segmentation flag (-fs) and it associated recursion depth
 
 VMD visualization
 ******************
-For futher visualization in VMD we need to add 'our.gro' and 'our.xtc' path to 'vmd_clusters_visualization.py' (found under example_inputs). You also need to make sure that you have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this out yourself, I did ask the developers to support anyone asking for such compilation and they said yes! So just send an e-mail to the VMD mailing list if you would need it. If you have the right flavor of VMD, all you need to type next is:
+For visualization with VMD you need to make sure that you have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this out yourself, I did ask the developers to support anyone asking for such compilation and they said yes! So just send an e-mail to the VMD mailing list if you would need it. If you have the right flavor of VMD, all you need to type next is:
 
 :code:`vmd -e vmd_clusters_visualization.vmd`
 
