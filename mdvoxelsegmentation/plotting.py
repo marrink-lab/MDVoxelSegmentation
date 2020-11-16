@@ -4,13 +4,14 @@ import pickle
 from matplotlib.collections import LineCollection
 
 my_dpi = 300
-scale = 0.01
+
 with open('cluster_mutations.pickle', 'rb') as handle:
     cluster_mutations = pickle.load(handle)
 with open('n_clusters.pickle', 'rb') as handle:
     n_clusters = pickle.load(handle)
 
 n_clusters = n_clusters
+scale = 0.01*(n_clusters/20)
 
 with open('visualization_data.pickle', 'rb') as handle:
     visualization_data = pickle.load(handle)
@@ -32,10 +33,12 @@ for key, value in cluster_mutations.items():
             plottingdata[change[0]].extend([[[change[0],change[1]],[key,key]],[[change[0],change[0]],[key,frames]]])
 
 
-fig, ax = plt.subplots()
-ax.set_xlim(0,6)
+fig, ax = plt.subplots(figsize=(8,8))
+ax.set_xlim(0,n_clusters + 1)
 ax.set_ylim(0,len(visualization_data))
-ax.set_xticks(range(1,6))
+ax.set_xticks(range(1,n_clusters + 1), minor=True)
+ax.set_xlabel('segment IDs')
+ax.set_ylabel('frame count')
 ax.set_aspect
 thicknessratio = 0
 for value in visualization_data[0]:
@@ -61,15 +64,15 @@ for key, value in plottingdata.items():
         if len(y) > len(x):
             for i in y:
                 points.append([(linedata[0][0],i),(linedata[0][0],i+1)])
-                linethickness.append(thickness[i][linedata[0][0]]/thicknessratio)
-            line_segments = LineCollection(points,linethickness)
+                linethickness.append(thickness[i][linedata[0][0]]/thicknessratio + 1)
+            line_segments = LineCollection(points,linethickness, alpha=1)
             ax.add_collection(line_segments)
         else:
             if thickness[linedata[1][0]][(linedata[0][0]-1)] > threshold:
                 print(thickness[linedata[1][0]][(linedata[0][0]-1)])
                 print(linedata[0],linedata[1])
                 print(linedata[1][0])
-                plt.plot(linedata[0],linedata[1],'-k')
+                #plt.plot(linedata[0],linedata[1],'-k')
             else:
                 if key < 10:
                     print(thickness[linedata[1][0]][(linedata[0][0]-2)])
@@ -88,7 +91,7 @@ for key, value in plottingdata.items():
           
 
 
-plt.savefig('bababoem.png')
+plt.savefig('bababoem.png', dpi=300)
 
 #plt.bar(time, ordered_clusters, align='center')
 #plt.xticks(range(len(plotinfo)), list(plotinfo.keys()))

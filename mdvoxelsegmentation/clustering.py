@@ -34,6 +34,7 @@ def positive_linear_blur(array, box):
     for non-rectangular PBC.
     """
     blurred = np.copy(array)
+    shift = 1
     # The box matrix is triangular
     
     # ... so a roll over x is just okay
@@ -504,7 +505,7 @@ def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array,
 # The 3d example of a very clear more set oriented neighbour clustering
 #@profile
 def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1, 
-                   verbose=False, min_cluster_size = 0):
+                   verbose=False):
     """
     A set oriented neighbour voxel clustering.
     
@@ -513,13 +514,14 @@ def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1,
     a boolean array. The exclusion mask acts as a dead zone for clustering. 
     The span is used to expand clustering to the first N neighbours
     in voxel space. Verbose can be used for more information during the 
-    clustering. A minimum cluster size in voxels can be given if required.
+    clustering.
     
     Returns a dictionary of clusters with a list of voxels per cluster.    
     """
     # Obtaining a set for all occupied voxels
     # starting the timer for generating the set (verbose)
-    start = time.time()
+    if verbose:
+        start = time.time()
     # removing the exclusion mask from the occupied voxel matrix
     if exclusion_mask is not False:
         explicit_matrix[exclusion_mask == True] = False
@@ -536,7 +538,8 @@ def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1,
     # The clustering scales linear and millions of points can be achieved in 
     #  the minute range.
     # beginning the timer for clustering (verbose)
-    start = time.time()
+    if verbose:
+        start = time.time()
     # the starting cluster
     current_cluster = 1
     # output dictionary containing a list of hits per cluster
@@ -551,7 +554,8 @@ def set_clustering(explicit_matrix, box, exclusion_mask=False, span=1,
             active = { n for n in around if n in pset and not pset.remove(n) }
         current_cluster += 1
     # stopping the timer for clustering (verbose)
-    stop = time.time()
+    if verbose:
+        stop = time.time()
 
     if verbose:
         print('It took {} to cluster {} clusters \

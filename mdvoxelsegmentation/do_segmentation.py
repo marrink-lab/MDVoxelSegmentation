@@ -8,6 +8,8 @@ Running this file is all that is needed to perform a basic leaflet
 segmentation for Martini lipids.
 """
 import time
+import os
+from shutil import copy
 import numpy as np
 import multiprocessing as mp
 import MDAnalysis as mda
@@ -58,6 +60,22 @@ def main():
 
     #TODO Segment the output over time (handle the user input in the argparser)
     settests.main()
+
+    # Copies the default VMD related files for easy visualization
+    file_path = "{}/example_inputs".format('/'.join(__file__.split('/')[:-2]))
+    input_PY = 'vmd_clusters_visualization.py' 
+    input_VMD = 'vmd_clusters_visualization.vmd'
+    cwd = os.getcwd()
+    for path in [input_PY, input_VMD]:
+        copy('{}/{}'.format(file_path, path), cwd)
     
+    # Replace the default filenames with the active filenames
+    args_dict = vars(args)
+    with open('vmd_clusters_visualization.py', 'r') as f:
+        sample1 = f.read().replace('your_ref.gro', args_dict['reference'])
+        sample2 = sample1.replace('your_ref.xtc', args_dict['trajectory'])
+    with open('vmd_clusters_visualization.py', 'w') as f:
+        f.write(sample2)
+ 
 if __name__=='__main__':
     main()

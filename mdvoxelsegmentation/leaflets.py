@@ -86,6 +86,7 @@ def volume_segmentation(atomgroup, headgroups_mask, exclusions_mask, args):
     volume_segments = seg.set_clustering(explicit_matrix, nbox, exclusions_mask)
     return volume_segments, voxel2atoms, explicit_matrix
 
+#@profile
 def connected_components_segmentation(selection_headgroups_atomgroup, 
                                       selection_linkers_atomgroup,
                                       selection_exclusions_atomgroup, 
@@ -197,7 +198,7 @@ def connected_components_segmentation(selection_headgroups_atomgroup,
 
     return out_array
     
-
+#@profile
 def leaflet_segmentation(
         selection_headgroups_atomgroup, 
         selection_linkers_atomgroup, 

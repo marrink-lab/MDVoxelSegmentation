@@ -19,3 +19,11 @@ mol showrep 0 0 0
 
 # Not showing the 0 cluster by default to reduce clutter
 mol showrep 0 1 0
+
+# Adds a neat short function to hide all active selections (hide)
+proc hide {} {
+   for {set x 0} {$x <= 1000} {incr x} {
+      mol showrep 0 $x 0
+   }
+}
+
