@@ -385,6 +385,7 @@ def find_dominant_neighbour_cluster(ref_atomgroup, query_atomgroup, cutoff,
     # Return 0 is nothing was changed
     return 0
 
+
 #@profile
 def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
     """
@@ -432,75 +433,75 @@ def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
     return changes, leftovers
 
 #@profile
-def iterative_force_clustering(ref_atomgroup, cutoff, cluster_array, 
-                               possible_clusters, max_cutoff=20, max_stop=1, 
-                               cutoff_increment=5, verbose=False):
+def iterative_force_clustering(ref_atomgroup, cluster_array, args):
     """
-    This performs an iterative force_clustering and stops when there is 
-    nothing changed. It returns a tuple(3) of occupation of each cluster per 
-    iteration in a dict if verbose is set to true, as well as the dynamic 
-    cutoffs list and the leftovers list. If verbose is not set, it will return 
-    the iteration depth.
-    """
-    if verbose:
-        unique, counts = np.unique(cluster_array, return_counts=True)
-        output_dict = {}
-        for idx, cluster in enumerate(unique):
-            output_dict[cluster] = [counts[idx]]
+    Iterative force_clustering in place and stops when there is 
+    nothing changed or if the cutoff is reached.
     
+    #TODO Make it possible to turn of ease in mechanic and just directly
+    move to maximum cutoff? Better for test runs and if maximum quality
+    is not required?
+    """
     # Setting some initial parameters changes in this sense reflects the 
     #  amouot of groups that where considered by the algortym, this is due to
     #  the fact that a non-changed group returns a 0 and this also ends up in 
     #  the list. If no group are left which return either 0 or an atomgroup, 
     #  the changes are 0.
-    start_cutoff = cutoff
-    cutoffs = []
+    max_cutoff = args.force_segmentation
+    max_iteration_depth = args.recursion_depth
+    start_cutoff = max_cutoff / 2
+    cutoff = start_cutoff
+    cutoff_increment = start_cutoff / max_iteration_depth
+    possible_clusters = np.unique(cluster_array)
     changes = []
     old_change = 0
     change = -1
     leftovers = -1
     counter = 0
-    stop = 0
     
-    while stop != max_stop and leftovers != 0:
+    while max_iteration_depth + 1 > counter and leftovers != 0:
         # Perform force clustering for each non clustered residue in the 
         #  ref_atomgroup.
         changed_cluster_array_indices, leftovers = force_clustering(
             ref_atomgroup, cutoff, 
             cluster_array, possible_clusters,
             )
-        # Some bookkeeping for proper quality control
-        if verbose:
-            unique, counts = np.unique(cluster_array, return_counts=True)
-            temp_dict = dict(zip(unique, counts))
-            cutoffs.append(cutoff)
-            for key in temp_dict:
-                output_dict[key].append(temp_dict[key])
         
         # Calculate the amount of changes
         change = len(changed_cluster_array_indices)
+        
+        # Handling the verbose printing to show the changes during the
+        #  iterations.
+        if args.force_info:
+            non_segmented_atoms = non_clustered_atomgroup(
+                ref_atomgroup,
+                cluster_array)
+            print('Non segmented particles after forced '
+                  'segmentation with a cutoff of {:0.2f} Angstrom in '
+                  'frame {}:\n{}'.format(
+                      cutoff, ref_atomgroup.universe.trajectory.frame, 
+                      non_segmented_atoms))
         
         # If nothing has changed, increment the cutoff and start the death 
         #  counter 
         if change == old_change:
             if (cutoff + cutoff_increment) <= max_cutoff:
                 cutoff += cutoff_increment
-            stop += 1
+            counter += 1
         # If something has changed, move to intial cutoff and reset death 
         #  counter
         else:
             cutoff = start_cutoff
-            stop = 0
+            counter = 0
             
         # Updating change
         old_change = change
-        changes.append(change)
-        counter += 1
-    
-    if verbose:
-        return output_dict, cutoffs, changes
-    else:
-        return counter
+        
+    if leftovers and args.force_info:
+        print('There were still unsegmented particles after the max-cutoff '
+              'was reached in frame {}.'.format(
+                  ref_atomgroup.universe.trajectory.frame))
+        
 
 # The 3d example of a very clear more set oriented neighbour clustering
 #@profile
