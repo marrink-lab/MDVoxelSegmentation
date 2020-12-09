@@ -176,7 +176,7 @@ def connected_components_segmentation(selection_headgroups_atomgroup,
     
     # Tries to segment non segmented lipids to the segments surrounding their
     #  headgroups. Segment 0 is excluded.        
-    if selection_linkers_atomgroup and args.force_segmentation:
+    if selection_linkers_atomgroup and args.force_segmentation and args.recursion_depth:
         print(args.linkers_selection_query)
         seg.iterative_force_clustering(
             selection_linkers_atomgroup, 
@@ -349,27 +349,22 @@ def leaflet_segmentation(
             #   universe.atoms array.
             out_array[leaflet_selection.ix] = segment+1
     
-    # Tries to segment non segmented lipids to the segments surrounding their
-    #  headgroups. Segment 0 is excluded.        
+    # Tries to segment non segmented lipids based on the linker_group 
+    #  selection. The linkers of both the unsegmetned lipid and the 
+    #  linkers of the reference groups are used. However we are only
+    #  interested in force segmentation if there are indeed non segmented
+    #  lipids.
     if selection_linkers_atomgroup and args.force_segmentation:
-        seg.iterative_force_clustering(
-            selection_linkers_atomgroup, 
-            int(args.force_segmentation*(2/3)), 
-            out_array, 
-            np.unique(out_array), 
-            max_cutoff=args.force_segmentation, 
-            max_stop=args.recursion_depth, 
-            cutoff_increment=1, 
-            verbose=False)
-        
-        if args.force_info:
-            non_segmented_atoms = seg.non_clustered(
-                selection_headgroups_atomgroup,
-                out_array)
-            print('{} Non segmented particles after forced '
-                  'segmentation with a cutoff of {} Angstrom:'.format(
-                      non_segmented_atoms, args.force_segmentation))
-
+        any_leftovers = np.any(
+            out_array[selection_headgroups_atomgroup.ix] == 0
+            )
+        if any_leftovers:
+            seg.iterative_force_clustering(
+                selection_linkers_atomgroup, 
+                out_array,
+                args,
+                )
+    
     return out_array
     
 
