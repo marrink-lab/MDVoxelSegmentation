@@ -12,7 +12,7 @@ This software has been developed to allow for a higher selection syntax than ato
 
 Features
 --------
-* v0.99a is a stable beta build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
+* v0.99b is a stable beta build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
 * Voxel based neighbour segmentation under all perdidic boundary conditions
 * Fast contour segmentation
 * Compatible with most MD file formats due to its tight link to MDAnalysis
@@ -59,9 +59,7 @@ MDAnalysis will probably throw some warnings stating that it cannot estimate the
 
 :code:`python /path/to/mdvoxelsegmentation_package/mdvoxelsegmentation/plotting.py`
 
-The graphing is still under construction and might change over time, therefore it is not included through the argparser.
-
-It is mainly the force segmentation flag (-fs) and it associated recursion depth (-rd) which have a big impact on performance. Turning force segmentation off (-lg none) is often a good idea if perfect final quality is not needed. By default `mdvseg` generates its own `selections.inp` which should cover all basic lipids in Martini. However, if some definitions are missing, you can always manually add them to the `selections.inp` (mdvseg does not overwrite an already present `selection.inp`).
+It is mainly the force segmentation flag (-fs) and it associated recursion depth (-rd) which have a big impact on performance. Turning force segmentation off (-lg 0) is default and perfectly fine if perfect final quality is not needed. By default `mdvseg` generates its own `selections.inp` which should cover all basic lipids in Martini. However, if some definitions are missing, you can always manually add them to the `selections.inp` (mdvseg does not overwrite an already present `selection.inp`).
 
 VMD visualization
 ******************
