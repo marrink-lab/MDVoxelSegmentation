@@ -17,7 +17,7 @@ from functools import partial
 from mdvoxelsegmentation import argparser
 from mdvoxelsegmentation import leaflets
 from mdvoxelsegmentation import settests
-
+from mdvoxelsegmentation import plotting
      
 
 def main():
@@ -76,6 +76,14 @@ def main():
         sample2 = sample1.replace('your_ref.xtc', args_dict['trajectory'])
     with open('vmd_clusters_visualization.py', 'w') as f:
         f.write(sample2)
+
+    # Copy the plotting script into the folder where the analysis is performed
+    #  and runs the default plotting procedure.
+    file_path = "{}".format('/'.join(__file__.split('/')[:-1]))
+    input_PY = 'plotting.py'
+    copy('{}/{}'.format(file_path, input_PY), cwd)
+    plotting.main()
+    
  
 if __name__=='__main__':
     main()

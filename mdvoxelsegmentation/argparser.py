@@ -114,12 +114,14 @@ def read_arguments():
         '-hres', '--hyper_resolution', nargs='?', default=0.5, type=float,
         help='blurs the coordinates by a fraction of the bin dimension (default=0.5)',
         )
+    # old default is 10
     optional_grp.add_argument(
-        '-rd', '--recursion_depth', nargs='?', default=10, type=int,
+        '-rd', '--recursion_depth', nargs='?', default=0, type=int,
         help='amount of iterations for forced segmentation (default=10; 0 is off)',
         )
+    # old default is 20
     optional_grp.add_argument(
-        '-fs', '--force_segmentation', nargs='?', default=20, type=float,
+        '-fs', '--force_segmentation', nargs='?', default=0, type=float,
         help='forces segmentation within set radius, the units are the same as in the reference file (default=20)',
         )
     optional_grp.add_argument(
