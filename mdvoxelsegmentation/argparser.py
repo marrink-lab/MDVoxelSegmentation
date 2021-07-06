@@ -111,8 +111,8 @@ def read_arguments():
         help='the binning resolution in the same units as the reference file (default=0.5)',
         )
     optional_grp.add_argument(
-        '-hres', '--hyper_resolution', nargs='?', default=0.5, type=float,
-        help='blurs the coordinates by a fraction of the bin dimension (default=0.5)',
+        '-hres', '--hyper_resolution', nargs='?', default=True, type=bool,
+        help='blurs the coordinates by one voxel expansion',
         )
     # old default is 10
     optional_grp.add_argument(

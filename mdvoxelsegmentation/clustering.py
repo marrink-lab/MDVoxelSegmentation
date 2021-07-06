@@ -141,10 +141,10 @@ def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
 
     transform = np.linalg.inv(box) @ nbox                 # transformation to voxel indices
     voxels = atomgroup.positions @ transform         
-    if hyperres:
+    #if hyperres:
         # Blur coordinates 
-        neighbors = hyperres * (np.mgrid[-1:2, -1:2, -1:2]).T.reshape((1, -1, 3))
-        voxels = (voxels[:, None, :] + neighbors).reshape((-1, 3))
+        #neighbors = hyperres * (np.mgrid[-1:2, -1:2, -1:2]).T.reshape((1, -1, 3))
+        #voxels = (voxels[:, None, :] + neighbors).reshape((-1, 3))
     voxels = voxels.astype(int)
         
     # Put everything in brick at origin
@@ -182,7 +182,9 @@ def gen_explicit_matrix(atomgroup, resolution=1, hyperres=False, max_offset=0.05
     # atom index starts from 0 here and is the index in the array, not the
     #  selection atom index in atom_select (these start from 1)
     if hyperres:
-        indices = np.repeat(atomgroup.ix, 27)
+        linear_blur(explicit, nbox, 1, inplace=True)
+        indices = atomgroup.ix
+        #indices = np.repeat(atomgroup.ix, 27)
     else:
         indices = atomgroup.ix
     for idx, voxel in zip(indices, voxels):
