@@ -355,10 +355,11 @@ def leaflet_segmentation(
     #  interested in force segmentation if there are indeed non segmented
     #  lipids.
     if selection_linkers_atomgroup and args.force_segmentation:
-        any_leftovers = np.any(
-            out_array[selection_headgroups_atomgroup.ix] == 0
+        leftovers_atomgroup = seg.non_clustered_atomgroup(
+            selection_headgroups_atomgroup, 
+            out_array,
             )
-        if any_leftovers:
+        if len(leftovers_atomgroup):
             seg.iterative_force_clustering(
                 selection_linkers_atomgroup, 
                 out_array,
