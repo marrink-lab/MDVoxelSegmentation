@@ -347,7 +347,7 @@ def find_key_with_max_value(dictionary):
     return 0
 
 #@profile    
-def find_dominant_neighbour_cluster(ref_atomgroup, query_atomgroup, cutoff, 
+def find_dominant_neighbour_cluster(ref, query_atomgroup, cutoff, 
                                     cluster_array, possible_clusters):
     """
     Uses the query_atomgroup to perform a neighbour search and find the 
@@ -357,16 +357,13 @@ def find_dominant_neighbour_cluster(ref_atomgroup, query_atomgroup, cutoff,
     the query_atomgroup. The possible cluster can be given to prevent 
     searching for it in each iteration.
     """ 
-    # Setting the reference atomgroup for the search, excluding the 
-    #  self particles.
-    ref = mda.lib.NeighborSearch.AtomNeighborSearch(
-        ref_atomgroup - query_atomgroup, ref_atomgroup.dimensions,
-        )
-    # Performing the neighbourhood search with a cutoff of 10 Angstrom
-    hits = ref.search(query_atomgroup, cutoff, 'A') # A is for Angstrom
+    query_indices = query_atomgroup.ix
+    hits = ref.search(query_atomgroup, cutoff, 'A').ix # A is for Angstrom
+    # Remove self from hits
+    hits = list(set(hits) - set(query_indices))
     # Obtaining the cluster value for each hit if there is a hit at all.
     if len(hits) > 0:
-        hit_clusters = cluster_array[hits.ix]
+        hit_clusters = cluster_array[hits]
     else: 
         return 0
     
@@ -389,7 +386,8 @@ def find_dominant_neighbour_cluster(ref_atomgroup, query_atomgroup, cutoff,
 
 
 #@profile
-def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
+def force_clustering(ref, ref_atomgroup, cutoff, cluster_array,
+                     possible_clusters, args):
     """
     Assigns a clusters to all non clustered residues with a shared atom in the 
     query_atomgroup in the cluster array. The cluster ID is only changed if 
@@ -411,15 +409,18 @@ def force_clustering(ref_atomgroup, cutoff, cluster_array, possible_clusters):
     query_atomgroup = non_clustered_atomgroup(ref_atomgroup, cluster_array)
     query_residuegroup = query_atomgroup.residues
     
+    if args.force_info:
+        print('\n\nThere are {} unlabeled residues.'.format(
+            len(query_atomgroup.residues)))
+    
     # Try to make the changes and either still return an empy list or a list 
     #  of (atomgroup, dominant_cluster) or simply an empty list for a 
     #  failed case.
     changes = []
     leftovers = 0
     for residue in query_residuegroup:
-        active_atoms = residue.atoms & ref_atomgroup
         temp_changes = find_dominant_neighbour_cluster(
-            ref_atomgroup, active_atoms, cutoff, 
+            ref, residue.atoms, cutoff, 
             cluster_array, possible_clusters,
             )
         # Only accept the change, if it returned non zero (the ouput for no 
@@ -455,49 +456,51 @@ def iterative_force_clustering(ref_atomgroup, cluster_array, args):
     cutoff = start_cutoff
     cutoff_increment = start_cutoff / max_iteration_depth
     possible_clusters = np.unique(cluster_array)
-    changes = []
-    old_change = 0
-    change = -1
+    change = 0
     leftovers = -1
-    counter = 0
     
-    while max_iteration_depth + 1 > counter and leftovers != 0:
+    # Setting the reference atomgroup for the search.
+    ref = mda.lib.NeighborSearch.AtomNeighborSearch(
+        ref_atomgroup, ref_atomgroup.dimensions,
+        )
+    
+    
+    while leftovers != 0:
+        start_time = time.time()
         # Perform force clustering for each non clustered residue in the 
         #  ref_atomgroup.
-        changed_cluster_array_indices, leftovers = force_clustering(
-            ref_atomgroup, cutoff, 
-            cluster_array, possible_clusters,
+        changed_cluster_atoms_list, leftovers = force_clustering(
+            ref, ref_atomgroup, cutoff, 
+            cluster_array, possible_clusters, args,
             )
         
         # Calculate the amount of changes
-        change = len(changed_cluster_array_indices)
+        change = len(changed_cluster_atoms_list)
         
         # Handling the verbose printing to show the changes during the
         #  iterations.
         if args.force_info:
-            non_segmented_atoms = non_clustered_atomgroup(
-                ref_atomgroup,
-                cluster_array)
-            print('Non segmented particles after forced '
+            print('It took {:.2f} seconds to perform one force segmentation iteration.'.format(
+                time.time()-start_time))
+            print('{} non segmented residues after forced '
                   'segmentation with a cutoff of {:0.2f} Angstrom in '
-                  'frame {}:\n{}'.format(
-                      cutoff, ref_atomgroup.universe.trajectory.frame, 
-                      non_segmented_atoms))
+                  'frame {}'.format(
+                      leftovers, cutoff, 
+                      ref_atomgroup.universe.trajectory.frame))
+            
         
         # If nothing has changed, increment the cutoff and start the death 
         #  counter 
-        if change == old_change:
+        if change == 0:
             if (cutoff + cutoff_increment) <= max_cutoff:
                 cutoff += cutoff_increment
-            counter += 1
+            else:
+                break
         # If something has changed, move to intial cutoff and reset death 
         #  counter
         else:
             cutoff = start_cutoff
-            counter = 0
-            
-        # Updating change
-        old_change = change
+
         
     if leftovers and args.force_info:
         print('There were still unsegmented particles after the max-cutoff '

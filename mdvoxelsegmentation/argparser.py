@@ -39,7 +39,7 @@ def write_default_input(path):
 (name D6A D6B C6A C6B D5A D5B C5A C5B D4A D4B C4A C4B D3A D3B C3A C3B) or (resname CHOL XHOL and name C1)
 
 [martini_linkers]
-(name PO4 GL1 GL2 D1A D1B C1A C1B AM1 AM2 GM1 GM2 COO COOH) or (resname CHOL and name ROH) or (resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and name C1 C2 C3 P1 P2 P3) or (name BB)
+(name PO4 GL1 GL2 D1A D1B C1A C1B AM1 AM2 GM1 GM2 COO COOH) or (resname CHOL and name ROH) or (resname PAPI PIPI POP1 POP2 POP3 POPI PUPI and name C1 C2 C3 P1 P2 P3)
 
 [martini_proteins]
 (name BB SC1 SC2 SC3 SC4 SC5)
@@ -111,22 +111,22 @@ def read_arguments():
         help='the binning resolution in the same units as the reference file (default=0.5)',
         )
     optional_grp.add_argument(
-        '-hres', '--hyper_resolution', nargs='?', default=True, type=bool,
-        help='blurs the coordinates by one voxel expansion',
+        '-hres', '--hyper_resolution', nargs='?', default=1, type=int,
+        help='blurs the coordinates by one voxel expansion 1/0 (default=1)',
         )
     # old default is 10
     optional_grp.add_argument(
-        '-rd', '--recursion_depth', nargs='?', default=0, type=int,
+        '-rd', '--recursion_depth', nargs='?', default=10, type=int,
         help='amount of iterations for forced segmentation (default=10; 0 is off)',
         )
     # old default is 20
     optional_grp.add_argument(
-        '-fs', '--force_segmentation', nargs='?', default=0, type=float,
+        '-fs', '--force_segmentation', nargs='?', default=20, type=float,
         help='forces segmentation within set radius, the units are the same as in the reference file (default=20)',
         )
     optional_grp.add_argument(
-        '-fi', '--force_info', nargs='?', default=False, type=bool,
-        help='set force segmentation information printing True/False (default=False)',
+        '-fi', '--force_info', nargs='?', default=0, type=int,
+        help='set force segmentation information printing 1/0 (default=0)',
         )
     optional_grp.add_argument(
         '-min', '--minimum_size', nargs='?', default=50, type=int,
