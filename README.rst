@@ -12,7 +12,7 @@ This software has been developed to allow for a higher selection syntax than ato
 
 Features
 --------
-* v1.0 is a stable beta build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
+* v1.0 is a stable build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
 * Voxel based neighbour segmentation under all perdidic boundary conditions
 * Fast contour segmentation
 * Compatible with most MD file formats due to its tight link to MDAnalysis
