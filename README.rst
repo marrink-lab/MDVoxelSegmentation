@@ -5,7 +5,7 @@ Using neighbor segmentation in voxelspace for fast and consistent spatial and te
 
 This software has been developed to allow for a higher selection syntax than atom and or residue index, such as abstract complex particles (e.g. lipid monolayers). MDVoxelSegmentation combines multiple layers of neighbor segmentation with a voxel mask, and makes tracking segments over time possible at high quality.
 
-This code was published in the following `article <https://pubs.acs.org/doi/abs/10.1021/acs.jctc.1c00446>`_.
+This code was published in the following open access `article <https://pubs.acs.org/doi/abs/10.1021/acs.jctc.1c00446>`_.
 
 * Open software: Apache 2 license
 
