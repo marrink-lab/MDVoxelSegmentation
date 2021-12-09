@@ -66,7 +66,9 @@ It is mainly the force segmentation flag (-fs) and it associated recursion depth
 
 VMD visualization
 ******************
-For visualization with VMD you need to make sure that you have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this out yourself, I did ask the developers to support anyone asking for such compilation and they said yes! So just send an e-mail to the VMD mailing list if you would need it. If you have the right flavor of VMD, all you need to type next is:
+For visualization with VMD you need to make sure that you have a version of VMD compiled against a python version supporting numpy. A compatible VMD compilation will be distributed in the future, for now you have to figure this out yourself, I did ask the developers to support anyone asking for such compilation and they said yes! So just send an e-mail to the VMD mailing list if you would need it. If you are running Ubuntu 20.04, you are in luck and I can supply you with a custom version of VMD 1.9.4 which should be relatively easy to install. Open a ticket and I'll see what I can do for you.
+
+If you have the right flavor of VMD, all you need to type next is:
 
 :code:`vmd -e vmd_clusters_visualization.vmd`
 
