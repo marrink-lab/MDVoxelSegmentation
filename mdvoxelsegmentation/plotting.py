@@ -114,6 +114,7 @@ def plotAllSegments(visualization_data, zero=False, sorting=False,
   # Handling the mamximum plotting parameter
   if maximum:
     data_array = data_array[:, :maximum]
+    ordered_segments = ordered_segments[:maximum]
   # Normalizing the array
   norm_array = normArray(data_array) 
   # Instantiating the plotting
@@ -160,7 +161,7 @@ def main():
   #  By default the 0 cluster is not plotted, but this can be turned on
   #  by setting zero=True. The data will be plotted to svg and png (using
   #  the indicated dpi).
-  plotAllSegments(visualization_data, zero=False, sorting=False, maximum=50, dpi=300)
+  plotAllSegments(visualization_data, zero=True, sorting=True, maximum=15, dpi=300)
 
 
 if __name__ == '__main__':
