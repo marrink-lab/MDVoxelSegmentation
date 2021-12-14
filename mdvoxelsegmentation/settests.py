@@ -70,10 +70,6 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
     matchlist = {k: [] for k in range(len(clustersnew))}
     merge_clusters = []
     for key,value in clustersold.items():
-        # The cluster 0 is autmaticly matched to the new 0 as it is the void
-        if key == 0:
-            matchlist[0] = [key]
-            continue
         # The likeness score range from 0 to 1 and determines how much 1 cluster is like the other
         likeness_score=index=0
         #assert 0 in matchlist[0], "Zero is not zero..."
