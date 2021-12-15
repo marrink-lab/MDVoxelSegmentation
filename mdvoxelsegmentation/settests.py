@@ -74,7 +74,7 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
         if key == 0:
             matchlist[0] = [key]
             continue
-        # The likeness score range from 0 to 1 and determines how much 1 cluster is like the other
+      # The likeness score range from 0 to 1 and determines how much 1 cluster is like the other
         likeness_score=index=0
         #assert 0 in matchlist[0], "Zero is not zero..."
         for idx, clusternew in enumerate(clustersnew):
@@ -109,7 +109,6 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
             output[largestset] = clustersnew[key]
             value.remove(largestset)
             merge_clusters += value
-            print(merge_clusters)
         # all other clusters are written to depricated clusters 
         #    for item in value:
         #         deprecated_clusters[item] = clustersold[item]
@@ -225,7 +224,9 @@ def sort_clusters(data):
     for idx, frame in enumerate(data):
         newcluster = deque()
         plotvariables = []
-        frame_set = set(frame)
+        frame_set = sorted(set(frame))
+
+        print(frame_set)
         # Make sure that the first entry in the newcluster dequeue is always 0
         if 0 not in frame_set:
             newcluster.append(set())
