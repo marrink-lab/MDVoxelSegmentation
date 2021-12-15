@@ -195,7 +195,6 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
                     print ("cluster " + str(newkey) + " was created from cluster " + str(index_bestmatch) + " at frame " + str(frame_number))
                     add_cluster_change(frame_number,(newkey,index_bestmatch,"c"))
     for merge in merge_clusters:
-        print(merge)
         likeness_score = 0
         index = 0
         deprecated_clusters[merge] = clustersold[merge]
@@ -226,7 +225,6 @@ def sort_clusters(data):
         plotvariables = []
         frame_set = sorted(set(frame))
 
-        print(frame_set)
         # Make sure that the first entry in the newcluster dequeue is always 0
         if 0 not in frame_set:
             newcluster.append(set())
@@ -243,24 +241,16 @@ def sort_clusters(data):
     return data,plotinfo, clustercount
 
 
-def compare_2masks(mask1, mask2, selection):
-    condition1 = mask1[mask1 == selection]
-    condition2 = mask2[mask2 == selection]
-    comparision = np.all(condition1 == condition2)
-    return comparision
-
 
 def main():
     data = np.load('clusters.npy')
     data_old = np.copy(data)
     data, plotinfo, n_clusters = sort_clusters(data)
-    for index, _ in enumerate(data):
-        if not compare_2masks(data[index],data_old[index], 0):
-            print(index)
 
 
 
-    np.save('clusters_ordered', data)
+
+    np.save('clusters', data)
     
     with open('visualization_data.pickle', 'wb') as handle:
         pickle.dump(plotinfo, handle, protocol=pickle.HIGHEST_PROTOCOL)
