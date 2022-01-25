@@ -19,7 +19,7 @@ with open('requirements.txt', 'r') as requirements_file:
 
 setup(
     name='mdvoxelsegmentation',
-    version='0.9.2',
+    version='1.1.0',
     description="Using neighbors in voxelspace for fast and consistant spatial and temporal segmentation.",
     long_description=readme + '\n\n' + history,
     author="Bart M. H. Bruininks",
@@ -36,9 +36,9 @@ setup(
     zip_safe=False,
     keywords=['md', 'voxel', 'segmentation', 'analysis'],
     classifiers=[
-        'Development Status :: 2 - Final Beta',
-        'Intended Audience :: Developers, Users',
-        'License :: OSI Approved :: Apache 2',
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: Apache Software License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
     ],
