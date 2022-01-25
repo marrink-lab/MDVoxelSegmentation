@@ -34,6 +34,8 @@ Instructions
 --------
 Installation
 ************
+pip install MDVoxelSegmentation (perform the alias as demonstrated below), or
+
 Fork the development branch using:
 
 :code:`git clone https://github.com/BartBruininks/MDVoxelSegmentation.git`
