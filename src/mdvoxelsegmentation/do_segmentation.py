@@ -62,7 +62,7 @@ def main():
     settests.main()
 
     # Copies the default VMD related files for easy visualization
-    file_path = "{}/example_inputs".format('/'.join(__file__.split('/')[:-2]))
+    file_path = "{}".format('/'.join(__file__.split('/')[:-1]))
     input_PY = 'vmd_clusters_visualization.py' 
     input_VMD = 'vmd_clusters_visualization.vmd'
     cwd = os.getcwd()

@@ -1,5 +1,0 @@
-numpy
-MDAnalysis
-psutil
-matplotlib
-
