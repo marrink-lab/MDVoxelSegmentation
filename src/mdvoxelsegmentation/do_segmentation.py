@@ -9,6 +9,7 @@ segmentation for Martini lipids.
 """
 import time
 import os
+import pkgutil
 from shutil import copy
 import numpy as np
 import multiprocessing as mp
@@ -67,7 +68,7 @@ def main():
     input_VMD = 'vmd_clusters_visualization.vmd'
     cwd = os.getcwd()
     for path in [input_PY, input_VMD]:
-        copy('{}/{}'.format(file_path, path), cwd)
+        copy('{}/templates/{}'.format(file_path, path), cwd)
     
     # Replace the default filenames with the active filenames
     args_dict = vars(args)

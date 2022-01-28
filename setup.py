@@ -4,7 +4,9 @@ import setuptools
 
 setuptools.setup(
     packages=['mdvoxelsegmentation'],
-    entry_points = {
+    include_package_data=True,
+    package_data={'':['templates/*']},
+    entry_points={
         'console_scripts' : ['mdvseg=mdvoxelsegmentation.do_segmentation:main'],
         },
 )
