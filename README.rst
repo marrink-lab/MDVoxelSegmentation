@@ -34,21 +34,7 @@ Instructions
 --------
 Installation
 ************
-:code:`pip install MDVoxelSegmentation` (perform the alias as demonstrated below), or
-
-Fork the development branch using:
-
-:code:`git clone https://github.com/BartBruininks/MDVoxelSegmentation.git`
-
-Move into the cloned folder and type:
-
-:code:`pip install -e .`
-
-Add an alias in your :code:`~/.bashrc` and restart/resource, finally run mdvseg with the help flag:
-
-:code:`alias mdvseg="python /path/to/mdvsegmentation_package/mdvoxelsegmentation/do_segmentation.py"` (add to :code:`~/.bashrc` and make sure the path is pointing to the correct folder)
-
-:code:`source ~/.bashrc` (run in terminal)
+:code:`pip install mdvoxelsegmentation` 
 
 :code:`mdvseg -h` (run in terminal)
 
@@ -60,11 +46,11 @@ To perform default segmentation on a GRO and XTC file containing a coarse grain 
 
 MDAnalysis will probably throw some warnings stating that it cannot estimate the masses for you coarse grain particles. This cannot be suppressed but it harmless. A useful graph of your segmentation can be made by running in the output folder:
 
-:code:`python /path/to/mdvoxelsegmentation_package/mdvoxelsegmentation/plotting.py`
+:code:`python plotting.py`
 
-The graph is created by default and makes use of matplotlib. Therefore adjusting the plotting script to make exactly what you need should be rather straight forward.
+The graph is created by default and the plotter is written to the folder. Therefore adjusting the plotting script to make exactly what you need should be rather straight forward.
 
-It is mainly the force segmentation flag (-fs) and it associated recursion depth (-rd) which have a big impact on performance. Turning force segmentation off (-lg 0) is fine if perfect final quality is not needed. By default `mdvseg` generates its own `selections.inp` which should cover all basic lipids in Martini. However, if some definitions are missing, you can always manually add them to the `selections.inp` (mdvseg does NOT overwrite an already present `selection.inp`).
+It is mainly the force segmentation flag (-fs) and it associated recursion depth (-rd) which have a big impact on performance. Turning force segmentation off (-fs 0) is fine if perfect final quality is not needed. By default `mdvseg` generates its own `selections.inp` which should cover all basic lipids in Martini. However, if some definitions are missing, you can always manually add them to the `selections.inp` (mdvseg does NOT overwrite an already present `selection.inp`).
 
 VMD visualization
 ******************
