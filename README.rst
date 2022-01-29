@@ -147,6 +147,23 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
     ##  enough particles due to the atomistic resolution!
     $ mdvseg -f your.gro -x your.xtc -hg charmm_heads -lg charmm_linkers -tg charmm_tails -hres 0
 
+*Segmenting non-amphipathic densities (normal segmentation)*
+
+.. code-block::
+    
+    # Define the density selection
+    $ vi selections.inp
+    
+    [density]
+    (not resname W WF ION) # Basic non-solvent Martini density
+    
+    [none]
+    False
+    
+    # Run mdvseg with the selections.inp without an exclusion group nor forced segmenation. 
+    mdvseg -f your.gro -x your.xtc -hg density -eg none -fs 0
+    
+
 Post some feedback in our issues
 *********************************
 We would love to see how you used MDVoxelSegmentation in your projects and are always happy to see cool systems and screenshots. Just upload them to an issue of this repository. There is also place for comments on usability and bugs. 
