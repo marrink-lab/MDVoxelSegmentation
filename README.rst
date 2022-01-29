@@ -131,7 +131,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
     ## Create an empty `selections.inp` and add the following lines, the selection 
     ##  syntax should always be one line and directly follow its header description.
 
-    # It is not bad to include the linkers also in the headgroups, but this is often 
+    # It is not bad to include the linkers in the headgroups as well, but this is often 
     #  not important.
     [charmm_heads]
     (name N P C12 C11 O11 O12 O13 O14)
