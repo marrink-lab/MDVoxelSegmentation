@@ -26,6 +26,8 @@ Features
     - (Inverted) hexagonal
     - Cubic
     - Membrane tethers
+    - Stalks
+    - Pores
     - Complex lipids formulations including cholesterol
     - Proteins
     - Up to millions of beads per frame (possibly billions)
