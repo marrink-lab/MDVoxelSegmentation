@@ -34,7 +34,7 @@ Features
     
 *experimental features*
 
-* Make non-bonded densities whole over PBC (`mdvwhole <https://github.com/BartBruininks/mdvwhole6>`_, currently a separate repository that will be merged upon completion). This feature is stable, tested and useful, but its integration in MDVoxelSegmentation has to be completed.
+* Make non-bonded densities whole over PBC (`mdvwhole <https://github.com/BartBruininks/mdvwhole>`_, currently a separate repository that will be merged upon completion). This feature is stable, tested and useful, but its integration in MDVoxelSegmentation has to be completed.
     
 Cite
 --------
