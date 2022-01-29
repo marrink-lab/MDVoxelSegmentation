@@ -33,6 +33,7 @@ Features
     - Up to millions of beads per frame (possibly billions)
     
 *experimental features*
+
 * Make non-bonded densities whole over PBC (`mdvwhole <https://github.com/BartBruininks/mdvwhole6>`_, currently a separate repository that will be merged upon completion)
     
 Cite
