@@ -11,6 +11,25 @@ This code was published in an open access `article <https://pubs.acs.org/doi/abs
 
 .. image:: https://user-images.githubusercontent.com/1488903/61180809-e43cdd80-a61c-11e9-91d7-7d13539c9c16.png
 
+Cite
+--------
+
+.. code-block::
+
+    @article{Bruininks2021,
+      doi = {10.1021/acs.jctc.1c00446},
+      url = {https://doi.org/10.1021/acs.jctc.1c00446},
+      year = {2021},
+      month = oct,
+      publisher = {American Chemical Society ({ACS})},
+      volume = {17},
+      number = {12},
+      pages = {7873--7885},
+      author = {Bart M. H. Bruininks and Albert S. Thie and Paulo C. T. Souza and Tsjerk A. Wassenaar and Shirin Faraji and Siewert J. Marrink},
+      title = {Sequential Voxel-Based Leaflet Segmentation of Complex Lipid Morphologies},
+      journal = {Journal of Chemical Theory and Computation}
+    }
+
 Features
 --------
 * v1.1.5 is a stable build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
