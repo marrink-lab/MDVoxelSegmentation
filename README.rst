@@ -66,7 +66,7 @@ To perform default segmentation on a GRO and XTC file containing a coarse grain 
 
 :code:`mdvseg -f path_to_your.gro -x path_to_your.xtc`
 
-MDAnalysis will probably throw some warnings stating that it cannot estimate the masses for you coarse grain particles. This cannot be suppressed but it harmless. A useful graph of your segmentation can be made by running in the output folder:
+MDAnalysis will probably throw some warnings stating that it cannot estimate the masses for you coarse grain particles. This cannot be suppressed but is harmless. A useful graph of your segmentation can be made by running in the output folder:
 
 :code:`python plotting.py`
 
