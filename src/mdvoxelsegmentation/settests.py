@@ -3,14 +3,14 @@
 """
 Created on Tue Mar  5 12:17:03 2019
 
-@author: bart
+@author: albert
 """
 from collections import deque
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-identity_threshold = 0.7
+identity_threshold = 0.618 #Golden ratio ;)
 cluster_mutations = {}
 
 
@@ -41,6 +41,18 @@ def get_match(target_key, matchlist):
             matched_clusters.remove(target_key)
     return key
 
+def jaccard_index(a,b):
+    """ Returns the jaccard index of two sets, a and b. If a and b are identical, returns 1
+    """
+    score = len(a) + len(b) - len(a.intersection(b))
+    if score == 0: 
+        return 1
+    else: 
+        return len(a.intersection(b))/ score
+    
+
+
+#def get_likeness_score(clusterold,clustersnew)
 
 def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,frame_number):
     """
@@ -56,21 +68,21 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
     """
     output = {}
     matchlist = {k: [] for k in range(len(clustersnew))}
+    merge_clusters = []
     for key,value in clustersold.items():
         # The cluster 0 is autmaticly matched to the new 0 as it is the void
-        # if key == 0:
-        #     matchlist[0] = [key]
-        #     continue
-        # The likeness score range from 0 to 1 and determines how much 1 cluster is like the other
+        if key == 0:
+            matchlist[0] = [key]
+            continue
+      # The likeness score range from 0 to 1 and determines how much 1 cluster is like the other
         likeness_score=index=0
         #assert 0 in matchlist[0], "Zero is not zero..."
         for idx, clusternew in enumerate(clustersnew):
             # Compare each cluster to the new clusters, assign tempscore
             # if the likeness is higher than the previous tempscore
-            temp_score = (len(value.intersection(clusternew))
-                /max(len(value),len(clusternew),1) )
+            temp_score = jaccard_index(value,clusternew)
             #if the new caculated score is higher, this becomes the score to beat
-            if temp_score > likeness_score:
+            if (temp_score > likeness_score) and (temp_score > identity_threshold):
                 likeness_score = temp_score
                 index = idx
         # Add the most likely combination to the list of matches
@@ -96,28 +108,27 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
                 largestset = getlargestset(value,clustersold)
             output[largestset] = clustersnew[key]
             value.remove(largestset)
+            merge_clusters += value
         # all other clusters are written to depricated clusters 
-            for item in value:
-                 deprecated_clusters[item] = clustersold[item]
-                 print("cluster " + str(item) + " was merged into cluster " + str(largestset) + " at frame " + str(frame_number) + "  1")  
+        #    for item in value:
+        #         deprecated_clusters[item] = clustersold[item]
+        #         print("cluster " + str(item) + " was merged into cluster " + str(largestset) + " at frame " + str(frame_number))  
                  # write the merge to the log 
-                 add_cluster_change(frame_number,(item,largestset,"m"))
+        #         add_cluster_change(frame_number,(item,largestset,"m"))
             value.append(largestset)
         # If no old cluster is matched to the new cluster, check for a split
         if len(value) == 0:
         # find the  old cluster from which this new cluster has split
             likeness_score_bestmatch=index_bestmatch=0
             for key2,value2 in clustersold.items():
-                temp_score = (len(value2.intersection(clustersnew[key]))
-                    /max(len(value2),len(clustersnew[key]),1))
+                temp_score = jaccard_index(value2,clustersnew[key])
                 if temp_score > likeness_score_bestmatch:
                     likeness_score_bestmatch = temp_score
                     index_bestmatch = key2
             likeness_scoredep=indexdep=0
         # Look through the list of deprecated clusters and see if there is a match
             for key2,value2 in deprecated_clusters.items():
-                temp_score = (len(value2.intersection(clustersnew[key]))
-                    /max(len(value2),len(clustersnew[key]),1) )
+                temp_score = jaccard_index(value2,clustersnew[key])
                 if temp_score > likeness_scoredep  and\
                 temp_score > identity_threshold :
                     likeness_scoredep = temp_score
@@ -145,8 +156,7 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
                         add_cluster_change(frame_number,(newkey,index_bestmatch,"c"))
                     else:
                         for key2,value2 in deprecated_clusters.items():
-                            temp_score = (len(value2.intersection(clustersnew[fight_cluster]))
-                                /max(len(value2),len(clustersnew[fight_cluster]),1) )
+                            temp_score = jaccard_index(value2,clustersnew[fight_cluster])
                             if temp_score > likeness_scoredep  and\
                             temp_score > identity_threshold :
                                 likeness_scoredep_bestmatch = temp_score
@@ -184,7 +194,25 @@ def compare_clusters (clustersold,clustersnew,deprecated_clusters,clusternumber,
                     output[newkey] = clustersnew[key]
                     print ("cluster " + str(newkey) + " was created from cluster " + str(index_bestmatch) + " at frame " + str(frame_number))
                     add_cluster_change(frame_number,(newkey,index_bestmatch,"c"))
-               
+    for merge in merge_clusters:
+        likeness_score = 0
+        index = 0
+        deprecated_clusters[merge] = clustersold[merge]
+        for idx, target in output.items():
+           
+
+            # Compare each cluster to the new clusters, assign tempscore
+            # if the likeness is higher than the previous tempscore
+            temp_score = jaccard_index(clustersold[merge],target)
+            #if the new caculated score is higher, this becomes the score to beat
+            if (temp_score > likeness_score):
+                likeness_score = temp_score
+                index = idx
+
+        print("cluster " + str(merge) + " was merged into cluster " + str(index) + " at frame " + str(frame_number))  
+             # write the merge to the log 
+        add_cluster_change(frame_number,(merge,index,"m"))
+
     return output, clusternumber, deprecated_clusters  
 
 def sort_clusters(data):
@@ -195,8 +223,15 @@ def sort_clusters(data):
     for idx, frame in enumerate(data):
         newcluster = deque()
         plotvariables = []
-        for cluster in set(frame):     
+        frame_set = sorted(set(frame))
+
+        # Make sure that the first entry in the newcluster dequeue is always 0
+        if 0 not in frame_set:
+            newcluster.append(set())
+        for cluster in frame_set:   
             newcluster.append(set(np.where(frame == cluster)[0]))  
+        # I think this sort here is pretty important since we do not want to 
+            # take any risk to have a non zero cluster as the first...
         olddict, clustercount, deprecated_clusters = compare_clusters(olddict, newcluster, deprecated_clusters,clustercount,idx)
         for key, value in olddict.items():
             for index in value:
@@ -206,12 +241,16 @@ def sort_clusters(data):
     return data,plotinfo, clustercount
 
 
+
 def main():
-    data = np.load('clusterszero.npy')
-    
+    data = np.load('clusters.npy')
+    data_old = np.copy(data)
     data, plotinfo, n_clusters = sort_clusters(data)
-    
-    np.save('clusters_ordered', data)
+
+
+
+
+    np.save('clusters', data)
     
     with open('visualization_data.pickle', 'wb') as handle:
         pickle.dump(plotinfo, handle, protocol=pickle.HIGHEST_PROTOCOL)

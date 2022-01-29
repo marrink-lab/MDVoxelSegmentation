@@ -27,7 +27,6 @@ def test_merge(olddict2,frame22):
     test2 = {0: set(), 1: {'a8', 'a5', 'a6', 'a4', 'a9', 'a2', 'a10', 'a7', 'a3', 'a1'}, 2: {'b1', 'b4', 'b3', 'b5', 'b2'}, 3: {'c4', 'c5', 'c6', 'c1', 'c2', 'c3'}, 5: {'e7', 'e5', 'e6', 'e1', 'e2', 'e3', 'e8', 'e4'}, 6: {'f2', 'f1', 'f3', 'f5', 'f6', 'f7', 'f9', 'f10', 'f8', 'f4'},  7: {'g3', 'g1', 'g2'}, 8: {'d1','d2','d3','d4','d5','d6','d7','d8','d9','d10'}}
     assert(result == test2), "Merging clusters failed" 
      
-    
 def test_deprecation(olddict3,frame23,test3deprecated):
     result,_,resultdep = sets.compare_clusters(olddict3,frame23,{},8,1)
     test3 = {0: set(), 1: {'a8', 'a5', 'a6', 'a4', 'a9', 'a2', 'a10', 'a7', 'a3', 'a1'}, 2: {'b1', 'b4', 'b3', 'b5', 'b2'}, 3: {'c4', 'c5', 'c6', 'c1', 'c2', 'c3'}, 4: {'d9', 'd5', 'd6', 'd8', 'd10', 'd2', 'd7', 'd1', 'd3', 'd4'}, 5: {'e7', 'e5', 'e6', 'e1', 'e2', 'e3', 'e8', 'e4'},  6: {'f2', 'f1', 'f3', 'f5', 'f6', 'f7', 'f9', 'f10', 'f8', 'f4'}, 7: {'g3', 'g1', 'g2'}}
@@ -43,3 +42,14 @@ def test_zero(zerodict,frame_zero):
     result,_,_ = sets.compare_clusters(zerodict,frame_zero,{},1,1)
     test_zero = {0 : {'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','b1','b2','b3','b4','b5','b6','b7','b8','b9','b10'}}
     assert result == test_zero, " Zero is no longer zero"
+
+def test_multi_merge(olddict1,multimergeframe):
+    mdv.settests.cluster_mutations = {}
+    result,plotinfo,_ = sets.compare_clusters(olddict1,multimergeframe,{},8,1)
+    test_multi_merge = {0: set(), 5: {'e7', 'e5', 'e6', 'e1', 'e2', 'e3', 'e8', 'e4'}, 6: {'f2', 'f1', 'f3', 'f5', 'f6', 'f7', 'f9', 'f10', 'f8', 'f4'}, 7: {'g3', 'g1', 'g2'}, 9:{'a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','b1','b2','b3','b4','b5','c1','c2','c3','c4','c5','c6','d1','d2','d3','d4','d5','d6','d7','d8','d9','d10'}}
+    print(plotinfo)
+    test_plotinfo = 9
+    print(mdv.settests.cluster_mutations)
+    assert(result == test_multi_merge), "multi merging failed" 
+    assert(plotinfo == test_plotinfo), " multi merge reporting failed"
+    assert(mdv.settests.cluster_mutations == {1: [ (9, 1, 'c'), (1, 9, 'm'), (2, 9, 'm'), (3, 9, 'm'), (4, 9, 'm')]})

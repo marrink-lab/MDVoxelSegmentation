@@ -1,4 +1,0 @@
-apiwrapper
-numpy
-MDAnalysis
-matplotlib

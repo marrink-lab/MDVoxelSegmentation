@@ -1,0 +1,29 @@
+gopython vmd_clusters_visualization.py
+
+# Add the cluster selection and coloring for the first 32 clusters.
+for {set CLUSTERID 0} {$CLUSTERID <= 32} {incr CLUSTERID} {
+	mol color ColorID $CLUSTERID
+	mol representation VDW 1.000000 12.000000
+	mol selection user $CLUSTERID
+	mol material AOChalky
+	mol selupdate $CLUSTERID 0 1
+	mol addrep 0
+	}
+
+# Adding all the groups above 32 to the group 32
+mol modselect 33 0 user 32 to 1000
+mol selupdate 33 0 1
+
+# Not showing the all selection with line representation
+mol showrep 0 0 0
+
+# Not showing the 0 cluster by default to reduce clutter
+mol showrep 0 1 0
+
+# Adds a neat short function to hide all active selections (hide)
+proc hide {} {
+   for {set x 0} {$x <= 1000} {incr x} {
+      mol showrep 0 $x 0
+   }
+}
+

@@ -14,7 +14,8 @@ the VMD statefile).
 @author: bart
 """
 from Molecule import Molecule
-from atomsel import *
+# needed for python2 VMD
+#from atomsel import *
 # needed for opening the array.npy (possibly compressed)
 import numpy as np
 
@@ -25,7 +26,7 @@ mol.delFrame() # Reading in a .gro file adds coordinates, which you don't want.
 mol.load("your_ref.xtc") # This should be the same .xtc used for clustering.
 
 # The cluster file generated to visualize in vmd.
-clusters = np.load('clusters_ordered.npy')
+clusters = np.load('clusters.npy')
 asel = atomsel("all")
 
 for frame, cluster in enumerate(clusters):
@@ -35,5 +36,5 @@ for frame, cluster in enumerate(clusters):
         print ('Not all frames could have their clusters assigned. Stopped in \
 frame ' + str(frame) + '.')
         break
-    print cluster, len(asel), len(cluster), frame
+    print (cluster, len(asel), len(cluster), frame)
     asel.set('user', cluster)
