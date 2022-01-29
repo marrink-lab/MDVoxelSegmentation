@@ -60,7 +60,7 @@ Installation
 
 Basic Segmentation
 ***************
-To perform default segmentation on a GRO and XTC file containing a coarse grain Martini system, you have to specify the GRO and XTC file. The final segmentation assignment will be written to :code:`clusters_ordered.npy`. This file can be used using numpy in python to perform the required analysis. 
+To perform default segmentation on a GRO and XTC file containing a coarse grain Martini system, you have to specify the GRO and XTC file. The final segmentation assignment will be written to :code:`clusters.npy`. This file can be used using numpy in python to perform the required analysis. 
 
 :code:`mdvseg -f path_to_your.gro -x path_to_your.xtc`
 
@@ -84,18 +84,18 @@ The first 32 segments will automatically be assigned a color and material/style.
 
 Useful things to know
 *********************
-Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should work without needing much prior knowledge. However, to make the most out of the created :code:`clusters_ordered.npy` it is useful to know some python (numpy, MDAnalysis, Matplotlib). If you are working with atomistic systems and have to specify your own headgroups/linkers/tails, you need to known what the relevant names are from your PDB/GRO and make your own selection entries in the :code:`selections.inp`. The :code:`selections.inp` uses the MDAnalysis selection syntax (very close to the VMD selection syntax). Below are some basic lines of code to help you on your way with using the segmentation data. First we will give an example for some basic plotting, followed by an example for an atomistic CHARMM :code:`selections.inp` for DOPE lipids.
+Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should work without needing much prior knowledge. However, to make the most out of the created :code:`clusters.npy` it is useful to know some python (numpy, MDAnalysis, Matplotlib). If you are working with atomistic systems and have to specify your own headgroups/linkers/tails, you need to known what the relevant names are from your PDB/GRO and make your own selection entries in the :code:`selections.inp`. The :code:`selections.inp` uses the MDAnalysis selection syntax (very close to the VMD selection syntax). Below are some basic lines of code to help you on your way with using the segmentation data. First we will give an example for some basic plotting, followed by an example for an atomistic CHARMM :code:`selections.inp` for DOPE lipids.
 
 *A basic python example to plot the number of segments over time*
 
-.. code-block:: python
+.. code-block::
 
     ## Importing numpy and matplotlib.
     import numpy as np
     import matplotlib.pyplot as plt
 
     ## Loading the segmentation data.
-    segments_over_time = np.load('clusters_ordered.npy')
+    segments_over_time = np.load('clusters.npy')
 
     ## Calculating the amount of segments in each frame.
     # Make an empty array which has one int32 for every frame.
@@ -123,7 +123,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
 
 *An atomistic segmentation example for DOPE lipids with the CHARMM force field*
 
-.. code-block:: python
+.. code-block::
 
     $ vi selections.inp
     ## Create an empty `selections.inp` and add the following lines, the selection 
