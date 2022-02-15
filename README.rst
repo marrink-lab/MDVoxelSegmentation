@@ -16,7 +16,7 @@ Features
 * v1.1.5 is a stable build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
 * Voxel based neighbour segmentation under all periodic boundary conditions
 * Fast contour segmentation
-* Compatible with most MD file formats due to its tight link to MDAnalysis
+* Compatible with most MD file formats due to its tight link to `MDAnalysis <https://www.mdanalysis.org/>`_
 * Consistent segmentation over time on trajectories
 * Compatible with VMD using standard visualization files (python compiled VMD)
 * A wide range of examples (bottom of this readme)
