@@ -131,7 +131,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
 
 
 .. code-block:: python
-
+    
     class Container():
         "A simple container class for our universe and segmentation data."
         def __init__(self, universe, segmentation):
@@ -154,6 +154,24 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
             segments = [container.get_segment_from_resid(resid) 
                             for resid in resids]
             return np.asarray(segments, dtype=int)
+            
+    # File paths
+    gro = 'your.gro'
+    xtc = 'your.xtc'
+    segmentation_data = 'clusters.npy'
+
+    # Creating universe and loading segmentation
+    u = mda.Universe(gro, xtc)
+    segmentation = np.load(segmentation_data)
+    
+    # Create our container
+    container = Container(u, segmentation)
+    
+    # Segment from resid
+    resid1_segmentID = container.get_segment_from_resid(1)
+    
+    # Segment from selection
+    all_cholesterol_segmentsIDs = container.get_segments_from_selection('resname CHOL')
 
 *An example file for flip-flop analysis is added under 'mdvoxelsegmentation/templates/lipid_flip-flop.ipynb'*
 
