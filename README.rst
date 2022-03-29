@@ -127,6 +127,38 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
     #  the following line.
     #fig.show()
 
+*Basic fetching of segment ID for residues*
+
+
+.. code-block:: python
+
+    class Container():
+        "A simple container class for our universe and segmentation data."
+        def __init__(self, universe, segmentation):
+            self.u = universe
+            self.segmentation = segmentation
+
+        def get_segment_from_resid(self, resid):
+            """Returns the residue segment id in the current frame."""
+            residue_index = self.u.residues[resid].atoms[0].ix
+            current_frame = self.u.trajectory.frame
+            residue_segment = self.segmentation[current_frame, residue_index] 
+            return residue_segment
+
+        def get_segments_from_selection(self, selection):
+            """Returns an array of lipid segments for the given selection 
+            in the current frame. The selection should adhere
+            to the basic mda selection syntax."""
+            selection = self.u.select_atoms(selection)
+            resids = selection.residues.ix
+            segments = [container.get_segment_from_resid(resid) 
+                            for resid in resids]
+            return np.asarray(segments, dtype=int)
+
+*An example file for flip-flop analysis is added under 'mdvoxelsegmentation/templates/lipid_flip-flop.ipynb'*
+
+.. image:: https://user-images.githubusercontent.com/1488903/160655290-8848773b-0b1c-4add-8b60-acbb72f27b18.png
+
 *An atomistic segmentation example for DOPE lipids with the CHARMM force field*
 
 .. code-block::
