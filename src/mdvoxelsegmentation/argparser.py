@@ -170,6 +170,10 @@ def read_arguments():
         help='set verbose True/False (default=False)',
         )
     optional_grp.add_argument(
+        '-xgro', '--exclusion_gro', '?', default=None, type=str,
+        help='use a gro file for extra exclusions (default=None)',
+        )
+    optional_grp.add_argument(
         '-h', '--help', action="help",
         help='show this help message and exit',
         )

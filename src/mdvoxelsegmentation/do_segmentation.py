@@ -25,10 +25,11 @@ def main():
     # Reading in the terminal commands/input files
     args = argparser.main()
     
-    # Reading trajectory
-    print('\nReading trajectory...')
-    universe = mda.Universe(args.reference, args.trajectory)
+
     if args.end == None:
+    # Reading trajectory
+        print('\nReading trajectory...')
+        universe = mda.Universe(args.reference, args.trajectory)
         args.end = len(universe.trajectory)
     
     # Finding the total amount of frames
