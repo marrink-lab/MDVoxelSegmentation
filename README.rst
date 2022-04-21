@@ -217,7 +217,7 @@ Using MDVoxelSegmentation on coarse grain Martini lipid/protein systems should w
     False
     
     # Run mdvseg with the selections.inp without an exclusion group nor forced segmenation. 
-    mdvseg -f your.gro -x your.xtc -hg density -eg none -fs 0
+    mdvseg -f your.gro -x your.xtc -hg your_selection -tg none  -eg none -fs 0
     
 
 Post some feedback in our issues
