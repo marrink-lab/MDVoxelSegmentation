@@ -123,6 +123,9 @@ def contour(array, box, span, inv=True):
         
 
 def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
+    check = resolution > 0
+    resolution = abs(resolution)
+
     box = dim2lattice(*atomgroup.dimensions)
     # The 10 is for going from nm to Angstrom
     nbox = (box / (10 * resolution)).round().astype(int) # boxels
@@ -130,7 +133,8 @@ def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
     error = unit - 10 * resolution * np.eye(3)           # error: deviation from cubic
     deviation = (0.1 * (unit**2).sum(axis=1)**0.5 - resolution) / resolution
 
-    if (np.abs(deviation) > max_offset).any():
+    # don't check if told so through a negative resolution 
+    if check and (np.abs(deviation) > max_offset).any():
         raise ValueError(
             'A scaling artifact has occured of more than {}% '
             'deviation from the target resolution in frame {} was '
@@ -140,17 +144,21 @@ def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
         )
 
     transform = np.linalg.inv(box) @ nbox                 # transformation to voxel indices
-    voxels = atomgroup.positions @ transform         
+    fraxels = atomgroup.positions @ transform         
     #if hyperres:
         # Blur coordinates 
         #neighbors = hyperres * (np.mgrid[-1:2, -1:2, -1:2]).T.reshape((1, -1, 3))
         #voxels = (voxels[:, None, :] + neighbors).reshape((-1, 3))
-    voxels = voxels.astype(int)
-        
+    voxels = fraxels.astype(int)
+    fraxels -= voxels
+    
     # Put everything in brick at origin
     for dim in (2, 1, 0):
         shifts = voxels[:, dim] // nbox[dim, dim]
         voxels -= shifts[:, None] * nbox[dim, :]
+
+    # Put every particle in the correct voxel
+    atomgroup.positions = (voxels + fraxels) @ np.linalg.inv(transform)
         
     return voxels, nbox
 
