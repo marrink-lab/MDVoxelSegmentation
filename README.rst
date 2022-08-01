@@ -13,7 +13,7 @@ This code was published in an open access `article <https://pubs.acs.org/doi/abs
 
 Features
 --------
-* v1.1.6 is a stable build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
+* v1.1.7 is a stable build and segmentation should be of high quality. The code is usable for high throughput with minimal effort with optimization. By default no more than a GRO and XTC (or equivalent) are required for successful segmentation of Martini systems.
 * Voxel based neighbour segmentation under all periodic boundary conditions
 * Fast contour segmentation
 * Compatible with most MD file formats due to its tight link to `MDAnalysis <https://www.mdanalysis.org/>`_
