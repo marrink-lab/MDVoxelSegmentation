@@ -30,16 +30,20 @@ def visData2Array(visualization_data):
     for segment_ID, segment_count in frame:
       unique_IDs.add(segment_ID)
 
-  # Make an empty array with size frames, uniqueIDs
-  frame_count = len(visualization_data.keys())
+  # Make an empty array with size frames + 1, uniqueIDs
+  frame_count = len(visualization_data.keys()) + 1
   segment_count = len(unique_IDs)
   data_array = np.zeros((frame_count, segment_count))
 
   # Fill the data_array with the values per frame per segment
-  for frame_ID in range(frame_count):
+  for frame_ID in range(frame_count -1):
     frame = visualization_data[frame_ID]
     for segment_ID, segment_count in frame:
       data_array[frame_ID, segment_ID] = segment_count
+  # Extending the last frame
+  frame = visualization_data[frame_count-2]
+  for segment_ID, segment_count in frame:
+      data_array[frame_count-1, segment_ID] = segment_count
   return data_array
 
 def normArray(data_array, maximum=1):
