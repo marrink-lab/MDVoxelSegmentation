@@ -149,7 +149,7 @@ def voxelate_atomgroup(atomgroup, resolution, hyperres=False, max_offset=0.05):
         # Blur coordinates 
         #neighbors = hyperres * (np.mgrid[-1:2, -1:2, -1:2]).T.reshape((1, -1, 3))
         #voxels = (voxels[:, None, :] + neighbors).reshape((-1, 3))
-    voxels = fraxels.astype(int)
+    voxels = np.floor(fraxels).astype(int)
     fraxels -= voxels
     
     # Put everything in brick at origin
