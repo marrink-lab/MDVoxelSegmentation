@@ -19,43 +19,55 @@ from mdvoxelsegmentation import argparser
 from mdvoxelsegmentation import leaflets
 from mdvoxelsegmentation import settests
 from mdvoxelsegmentation import plotting
-     
+
 
 def main():
     # Reading in the terminal commands/input files
     args = argparser.main()
-    
+
     # Reading trajectory
     print('\nReading trajectory...')
     universe = mda.Universe(args.reference, args.trajectory)
     if args.end == None:
         args.end = len(universe.trajectory)
-    
+
     # Finding the total amount of frames
     args.frames = int((args.end - args.begin) / args.stride)
-    
+
     # Setting the amount of threads to the lowest value [detected, trajlen]
     if args.frames < args.threads:
         args.threads = args.frames
-            
-    
+
+
     # Starting the multithreaded leaflet segmentation
     #print('Actual segmentation..')
     start = time.time()
-    
+
+    # Create multiprocessing pool with specified number of threads
     pool = mp.Pool(args.threads)
-    segments = pool.map(partial(leaflets.mf_leaflets_threaded, args=args), range(args.threads))
-    segments = np.asarray(segments)
-    segments = np.concatenate(segments, axis=0)
+
+    # Execute threaded leaflet processing
+    thread_results = pool.map(partial(leaflets.mf_leaflets_threaded, args=args), range(args.threads))
+
+    # Flatten the heterogeneous results into a single list
+    flattened_segments = []
+    for segment_batch in thread_results:
+        if isinstance(segment_batch, np.ndarray):
+            flattened_segments.extend(segment_batch)
+        else:
+            flattened_segments.append(segment_batch)
+
+    # Convert to unified numpy array
+    segments = np.array(flattened_segments)
+
+    # Clean up multiprocessing resources
     pool.close()
     pool.join()
-    
-    #print(segments, len(segments))
-    
+
     print()
     print('Segmentation took: {:.2f} seconds.\n'.format(time.time() - start))
     print('The segmentation array was written to [{}.npy].'.format(args.output))
-    
+
     #TODO Writing the ouput at once, this should become a per frame append!
     np.save(args.output, segments.astype(args.bit_size))
 
@@ -64,12 +76,12 @@ def main():
 
     # Copies the default VMD related files for easy visualization
     file_path = "{}".format('/'.join(__file__.split('/')[:-1]))
-    input_PY = 'vmd_clusters_visualization.py' 
+    input_PY = 'vmd_clusters_visualization.py'
     input_VMD = 'vmd_clusters_visualization.vmd'
     cwd = os.getcwd()
     for path in [input_PY, input_VMD]:
         copy('{}/templates/{}'.format(file_path, path), cwd)
-    
+
     # Replace the default filenames with the active filenames
     args_dict = vars(args)
     with open('vmd_clusters_visualization.py', 'r') as f:
@@ -84,7 +96,7 @@ def main():
     input_PY = 'plotting.py'
     copy('{}/{}'.format(file_path, input_PY), cwd)
     plotting.main()
-    
- 
+
+
 if __name__=='__main__':
     main()
