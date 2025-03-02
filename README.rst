@@ -60,7 +60,7 @@ Instructions
 --------
 Installation
 ************
-:code:`pip install git+https://github.com/marrink-lab/MDVoxelSegmentation
+:code:`pip install git+https://github.com/marrink-lab/MDVoxelSegmentation`
 
 :code:`mdvseg -h` (run in terminal)
 
